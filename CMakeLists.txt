@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.16)
+project(Tracer LANGUAGES CXX C)
+
+include(dep/glm.cmake)
+
+file(
+        GLOB
+        SRCS
+        src/main.cpp
+        src/core/*.hpp
+        src/core/*.cpp
+        src/renderer/*.hpp
+        src/renderer/*.cpp
+        src/utility/*.hpp
+        src/utility/*.cpp
+        src/factory/*.hpp
+        src/factory/*.cpp
+        src/filter/*.cpp
+)
+
+add_executable(Tracer ${SRCS})
+
+target_compile_features(Tracer PRIVATE cxx_std_17)
+
+target_include_directories(
+        Tracer
+        PRIVATE
+        src
+        dep
+)
+
+target_link_libraries(
+        Tracer
+        PRIVATE
+        glm::glm
+)

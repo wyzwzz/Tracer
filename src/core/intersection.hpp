@@ -1,0 +1,8 @@
+//
+// Created by wyz on 2022/5/18.
+//
+
+#ifndef TRACER_INTERSECTION_HPP
+#define TRACER_INTERSECTION_HPP
+
+#endif //TRACER_INTERSECTION_HPP
