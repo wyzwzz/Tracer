@@ -3,6 +3,8 @@
 #include "core/scene.hpp"
 #include "factory/filter.hpp"
 #include "factory/renderer.hpp"
+#include "factory/camera.hpp"
+#include "factory/scene.hpp"
 #include "utility/image_file.hpp"
 using namespace tracer;
 int main(int argc,char** argv){
@@ -10,10 +12,17 @@ int main(int argc,char** argv){
     int image_w = 1280;
     int image_h = 720;
 
-    PTRendererParams params;
+    PTRendererParams params{10,16,2};
     auto renderer = create_pt_renderer(params);
-    Scene scene;
-    auto render_target = renderer->render(scene,Film({image_w,image_h},filter));
+    auto camera = create_thin_lens_camera((real)1280/720,
+                                          {0.0,0.0,-1.0},
+                                          {0.0,0.0,0.0},
+                                          {0.0,1.0,0.0},
+                                          PI_r*0.5,
+                                          0.025,1);
+    auto scene = create_general_scene();
+    scene->set_camera(camera);
+    auto render_target = renderer->render(*scene.get(),Film({image_w,image_h},filter));
     write_image_to_hdr(render_target.color,"tracer_test.hdr");
 
     return 0;

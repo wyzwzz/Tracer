@@ -10,9 +10,10 @@
 TRACER_BEGIN
 
 struct PTRendererParams{
-    int spp = 1;
     int worker_count = 0;
     int task_tile_size = 16;
+    int spp = 1;
+
 };
 
 RC<Renderer> create_pt_renderer(const PTRendererParams& params);

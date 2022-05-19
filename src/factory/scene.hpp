@@ -2,7 +2,17 @@
 // Created by wyz on 2022/5/18.
 //
 
-#ifndef TRACER_SCENE_HPP
-#define TRACER_SCENE_HPP
+#ifndef TRACER_FACTORY_SCENE_HPP
+#define TRACER_FACTORY_SCENE_HPP
+#include "common.hpp"
+#include "core/scene.hpp"
 
-#endif //TRACER_SCENE_HPP
+TRACER_BEGIN
+
+RC<Scene> create_general_scene();
+
+
+TRACER_END
+
+
+#endif //TRACER_FACTORY_SCENE_HPP

@@ -33,7 +33,23 @@ struct RenderTarget{
 
             }
             void add_sample(const Point2f& pos,Spectrum li,real sample_weight = 1.0){
-                get_pixel((Point2i)pos).contrib_sum += li;
+                //todo check is li is infinite
+                Point2f discrete_pos = pos - Point2f(0.5,0.5);
+                Point2i p0 = (Point2i)Ceil(discrete_pos - filter->radius());
+                Point2i p1 = (Point2i)Floor(discrete_pos + filter->radius()) + Point2i(1,1);
+                p0 = Max(p0,tile_pixel_bound.low);
+                p1 = Min(p1,tile_pixel_bound.high);
+                for(int y = p0.y; y < p1.y; ++y){
+                    for(int x = p0.x; x < p1.x; ++x){
+                        Point2f offset = pos - Point2f(x+0.5,y+0.5);
+                        real filter_weight = filter->eval(offset.x,offset.y);
+                        auto& tile_pixel = get_pixel(Point2i(x,y));
+                        tile_pixel.contrib_sum += li * filter_weight * sample_weight;
+                        tile_pixel.filter_weight_sum += filter_weight;
+                    }
+                }
+                //ok
+
             }
             Bounds2i get_pixel_bound() const{
                 return tile_pixel_bound;
@@ -45,6 +61,7 @@ struct RenderTarget{
                 return tile_pixels[offset];
             }
         private:
+            //todo replace with Image2D
             Box<TilePixel[]> tile_pixels;
             //存储的是相对于整个film的相对坐标
             const Bounds2i tile_pixel_bound;
@@ -99,7 +116,7 @@ struct RenderTarget{
 
         struct Pixel{
             Spectrum color;
-            real weight = 1.0;
+            real weight;
         };
         Box<Pixel[]> pixels;
         Pixel& get_pixel(const Point2i& p){

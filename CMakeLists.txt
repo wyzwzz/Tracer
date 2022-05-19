@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(Tracer LANGUAGES CXX C)
 
 include(dep/glm.cmake)
-
+include(dep/spdlog.cmake)
 file(
         GLOB
         SRCS
@@ -16,6 +16,8 @@ file(
         src/factory/*.hpp
         src/factory/*.cpp
         src/filter/*.cpp
+        src/camera/*.cpp
+        src/shape/*cpp
 )
 
 add_executable(Tracer ${SRCS})
@@ -33,4 +35,5 @@ target_link_libraries(
         Tracer
         PRIVATE
         glm::glm
+        spdlog::spdlog
 )
