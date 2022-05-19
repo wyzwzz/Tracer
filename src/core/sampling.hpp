@@ -5,7 +5,7 @@
 #ifndef TRACER_SAMPLING_HPP
 #define TRACER_SAMPLING_HPP
 #include "common.hpp"
-
+#include "utility/geometry.hpp"
 TRACER_BEGIN
 
     Point2f ConcentricSampleDisk(const Point2f &u);

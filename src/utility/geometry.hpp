@@ -5,6 +5,7 @@
 #ifndef TRACER_GEOMETRY_HPP
 #define TRACER_GEOMETRY_HPP
 
+#include "common.hpp"
 
 namespace tracer {
 
@@ -492,7 +493,7 @@ namespace tracer {
 
         T x, y, z;
     };
-
+    using Normal3f = Normal3<real>;
 
     template <typename T>
     inline Vector3<T> normalize(const Vector3<T> &v) {
@@ -541,6 +542,13 @@ namespace tracer {
 
         return Bounds2<T>(Max(b1.low, b2.low), Min(b1.high, b2.high));
     }
+    using Point2f = Point2<real>;
+    using Point3f = Point3<real>;
+    using Vector3i = Vector3<int>;
+    using Vector2i = Vector2<int>;
+    using Vector3f = Vector3<real>;
+    using Vector2f = Vector2<real>;
+    using Bounds2f = Bounds2<real>;
 
     class Bounds2iIterator : public std::forward_iterator_tag {
     public:
@@ -598,6 +606,99 @@ namespace tracer {
     }
 
 
+    template <typename T>
+    class Bounds3 {
+    public:
+        Bounds3() {
+            T minNum = std::numeric_limits<T>::lowest();
+            T maxNum = std::numeric_limits<T>::max();
+            pMin = Point3<T>(maxNum, maxNum, maxNum);
+            pMax = Point3<T>(minNum, minNum, minNum);
+        }
+        explicit Bounds3(const Point3<T> &p) : pMin(p), pMax(p) {}
+        Bounds3(const Point3<T> &p1, const Point3<T> &p2)
+                : pMin(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
+                       std::min(p1.z, p2.z)),
+                  pMax(std::max(p1.x, p2.x), std::max(p1.y, p2.y),
+                       std::max(p1.z, p2.z)) {}
+        const Point3<T> &operator[](int i) const;
+        Point3<T> &operator[](int i);
+        bool operator==(const Bounds3<T> &b) const {
+            return b.pMin == pMin && b.pMax == pMax;
+        }
+        bool operator!=(const Bounds3<T> &b) const {
+            return b.pMin != pMin || b.pMax != pMax;
+        }
+        Point3<T> corner(int corner) const {
+            return Point3<T>((*this)[(corner & 1)].x,
+                             (*this)[(corner & 2) ? 1 : 0].y,
+                             (*this)[(corner & 4) ? 1 : 0].z);
+        }
+        Vector3<T> diagonal() const { return pMax - pMin; }
+        T surface_area() const {
+            Vector3<T> d = diagonal();
+            return 2 * (d.x * d.y + d.x * d.z + d.y * d.z);
+        }
+        T volume() const {
+            Vector3<T> d = diagonal();
+            return d.x * d.y * d.z;
+        }
+        int maximum_extent() const {
+            Vector3<T> d = diagonal();
+            if (d.x > d.y && d.x > d.z)
+                return 0;
+            else if (d.y > d.z)
+                return 1;
+            else
+                return 2;
+        }
+
+        Vector3<T> offset(const Point3<T> &p) const {
+            Vector3<T> o = p - pMin;
+            if (pMax.x > pMin.x) o.x /= pMax.x - pMin.x;
+            if (pMax.y > pMin.y) o.y /= pMax.y - pMin.y;
+            if (pMax.z > pMin.z) o.z /= pMax.z - pMin.z;
+            return o;
+        }
+        void bounding_sphere(Point3<T> *center, real *radius) const {
+            *center = (pMin + pMax) / 2;
+            *radius = Inside(*center, *this) ? Distance(*center, pMax) : 0;
+        }
+        template <typename U>
+        explicit operator Bounds3<U>() const {
+            return Bounds3<U>((Point3<U>)pMin, (Point3<U>)pMax);
+        }
+        bool IntersectP(const Ray &ray, real *hitt0 = nullptr,
+                        real *hitt1 = nullptr) const;
+        inline bool IntersectP(const Ray &ray, const Vector3f &invDir,
+                               const int dirIsNeg[3]) const;
+
+        Point3<T> pMin, pMax;
+    };
+
+    using Bounds3f = Bounds3<real>;
+    using Bounds3i = Bounds3<int>;
+
+    class Ray{
+    public:
+        Ray(const Point3f& o, const Vector3f& d,real t_min = 0,real t_max = REAL_MAX)
+                :o(o),d(d),t_min(t_min),t_max(t_max)
+        {}
+        Ray()
+                :Ray(Point3f(),Vector3f(1,0,0))
+        {}
+
+        Point3f operator()(real t) const{
+            return o + d * t;
+        }
+
+
+        Point3f o;
+        Vector3f d;
+        //todo add t?
+        mutable real t_min;
+        mutable real t_max;
+    };
 
 
 }

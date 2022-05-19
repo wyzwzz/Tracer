@@ -9,7 +9,7 @@
 #include <memory>
 
 #include <glm/glm.hpp>
-#include "utility/geometry.hpp"
+
 #define TRACER_BEGIN namespace tracer{
 #define TRACER_END }
 
@@ -17,24 +17,24 @@ TRACER_BEGIN
 
 class Scene;
 class Camera;
-
+class Shape;
+class Aggregate;
+class Material;
 class Filter;
 class Sampler;
 class Ray;
 class Renderer;
 class Primitive;
+class MediumInterface;
+
+class SurfaceIntersection;
 
     using real = float;
 
 using Spectrum = glm::vec3;
 
-using Point2f = Point2<real>;
-using Point3f = Point3<real>;
-using Vector3i = Vector3<int>;
-using Vector2i = Vector2<int>;
-using Vector3f = Vector3<real>;
-using Vector2f = Vector2<real>;
-using Bounds2f = Bounds2<real>;
+
+
 
     template<typename T>
     constexpr std::enable_if_t<std::is_floating_point_v<T>, T>
@@ -107,26 +107,7 @@ constexpr real REAL_MAX = std::numeric_limits<real>::max();
         return v && !(v & (v - 1));
     }
 
-    class Ray{
-    public:
-        Ray(const Point3f& o, const Vector3f& d,real t_min = 0,real t_max = REAL_MAX)
-        :o(o),d(d),t_min(t_min),t_max(t_max)
-        {}
-        Ray()
-        :Ray(Point3f(),Vector3f(1,0,0))
-        {}
 
-        Point3f operator()(real t) const{
-            return o + d * t;
-        }
-
-
-        Point3f o;
-        Vector3f d;
-        //todo add t?
-        mutable real t_min;
-        mutable real t_max;
-    };
 
 TRACER_END
 

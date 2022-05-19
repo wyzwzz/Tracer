@@ -5,7 +5,7 @@
 #ifndef TRACER_TRANSFORM_HPP
 #define TRACER_TRANSFORM_HPP
 
-#include "common.hpp"
+#include "utility/geometry.hpp"
 
 namespace tracer{
 

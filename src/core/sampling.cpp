@@ -2,7 +2,7 @@
 // Created by wyz on 2022/5/19.
 //
 #include "sampling.hpp"
-
+#include "utility/geometry.hpp"
 TRACER_BEGIN
 
     Point2f ConcentricSampleDisk(const Point2f &u){
