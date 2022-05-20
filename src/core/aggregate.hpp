@@ -5,7 +5,7 @@
 #ifndef TRACER_AGGREGATE_HPP
 #define TRACER_AGGREGATE_HPP
 #include <vector>
-#include "common.hpp"
+#include "utility/geometry.hpp"
 
 TRACER_BEGIN
 /**
@@ -16,9 +16,9 @@ class Aggregate{
 public:
     virtual ~Aggregate() = default;
 
-    virtual void build() = 0;
+    virtual void build(std::vector<RC<Primitive>> primitives) = 0;
 
-    virtual void build(const std::vector<RC<Primitive>>& primitives) = 0;
+    virtual Bounds3f world_bound() const noexcept = 0;
 
     virtual bool intersect(const Ray& ray) const noexcept = 0;
 

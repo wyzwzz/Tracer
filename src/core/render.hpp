@@ -35,10 +35,10 @@ struct RenderTarget{
             void add_sample(const Point2f& pos,Spectrum li,real sample_weight = 1.0){
                 //todo check is li is infinite
                 Point2f discrete_pos = pos - Point2f(0.5,0.5);
-                Point2i p0 = (Point2i)Ceil(discrete_pos - filter->radius());
-                Point2i p1 = (Point2i)Floor(discrete_pos + filter->radius()) + Point2i(1,1);
-                p0 = Max(p0,tile_pixel_bound.low);
-                p1 = Min(p1,tile_pixel_bound.high);
+                Point2i p0 = (Point2i)ceil(discrete_pos - filter->radius());
+                Point2i p1 = (Point2i)floor(discrete_pos + filter->radius()) + Point2i(1,1);
+                p0 = max(p0,tile_pixel_bound.low);
+                p1 = min(p1,tile_pixel_bound.high);
                 for(int y = p0.y; y < p1.y; ++y){
                     for(int x = p0.x; x < p1.x; ++x){
                         Point2f offset = pos - Point2f(x+0.5,y+0.5);
@@ -76,10 +76,10 @@ struct RenderTarget{
             Point2f half_pixel(0.5,0.5);
             Bounds2f sample_bounds = (Bounds2f)pixel_bounds;
             //根据filter生成新的tile bounds 因此每一个tile之间存在padding
-            Point2i low = (Point2i)Ceil(sample_bounds.low - half_pixel - filter->radius());
-            Point2i high = (Point2i)Floor(sample_bounds.high - half_pixel + filter->radius()) + Point2i(1,1);
+            Point2i low = (Point2i)ceil(sample_bounds.low - half_pixel - filter->radius());
+            Point2i high = (Point2i)floor(sample_bounds.high - half_pixel + filter->radius()) + Point2i(1,1);
             Bounds2i film_bounds = get_film_bounds();
-            Bounds2i tile_bounds = Intersect(Bounds2i(low,high),film_bounds);
+            Bounds2i tile_bounds = intersect(Bounds2i(low,high),film_bounds);
             return newBox<Tile>(tile_bounds,filter);
         }
 

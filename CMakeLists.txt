@@ -3,6 +3,7 @@ project(Tracer LANGUAGES CXX C)
 
 include(dep/glm.cmake)
 include(dep/spdlog.cmake)
+include(dep/tinyobjloader.cmake)
 file(
         GLOB
         SRCS
@@ -18,6 +19,10 @@ file(
         src/filter/*.cpp
         src/camera/*.cpp
         src/shape/*cpp
+        src/texture/*.cpp
+        src/material/*.cpp
+        src/light/*.cpp
+        src/accelerator/*.cpp
 )
 
 add_executable(Tracer ${SRCS})
@@ -36,4 +41,5 @@ target_link_libraries(
         PRIVATE
         glm::glm
         spdlog::spdlog
+        tinyobjloader
 )

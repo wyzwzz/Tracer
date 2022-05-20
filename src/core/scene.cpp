@@ -12,6 +12,12 @@ TRACER_BEGIN
     public:
         ~GeneralScene() override {}
 
+        GeneralScene() = default;
+
+        GeneralScene(const RC<Aggregate>& accel){
+
+        }
+
         void set_camera(RC<const Camera> cam) override{
             scene_camera = cam;
         }
@@ -31,6 +37,12 @@ TRACER_BEGIN
 
     RC<Scene> create_general_scene(){
         return newRC<GeneralScene>();
+    }
+
+    RC<Scene> create_general_scene(const RC<Aggregate>& accel
+//                                   ,const vector<RC<Light>>& lights
+    ){
+        return newRC<GeneralScene>(accel);
     }
 
 TRACER_END

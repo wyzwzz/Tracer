@@ -6,7 +6,7 @@
 #define TRACER_GEOMETRY_HPP
 
 #include "common.hpp"
-
+#include "hash.hpp"
 namespace tracer {
 
     template<typename T>
@@ -102,9 +102,12 @@ namespace tracer {
         return v * f;
     }
 
+
+
     template<typename T>
     class Point2 {
     public:
+        Point2(){}
         Point2(T xx, T yy) : x(xx), y(yy) {}
 
         template<typename U>
@@ -149,22 +152,22 @@ namespace tracer {
     using Point2i = Point2<int>;
 
     template<typename T>
-    Point2<T> Floor(const Point2<T> &p) {
+    Point2<T> floor(const Point2<T> &p) {
         return Point2<T>(std::floor(p.x), std::floor(p.y));
     }
 
     template<typename T>
-    Point2<T> Ceil(const Point2<T> &p) {
+    Point2<T> ceil(const Point2<T> &p) {
         return Point2<T>(std::ceil(p.x), std::ceil(p.y));
     }
 
     template<typename T>
-    Point2<T> Min(const Point2<T> &p1, const Point2<T> &p2) {
+    Point2<T> min(const Point2<T> &p1, const Point2<T> &p2) {
         return Point2<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y));
     }
 
     template<typename T>
-    Point2<T> Max(const Point2<T> &p1, const Point2<T> &p2) {
+    Point2<T> max(const Point2<T> &p1, const Point2<T> &p2) {
         return Point2<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y));
     }
     template <typename T, typename U>
@@ -301,6 +304,21 @@ namespace tracer {
 
         T x, y, z;
     };
+    template<typename T>
+    Point3<T> min(const Point3<T> &p1, const Point3<T> &p2) {
+        return Point3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y),std::min(p1.z,p2.z));
+    }
+
+    template<typename T>
+    Point3<T> max(const Point3<T> &p1, const Point3<T> &p2) {
+        return Point3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y),std::max(p1.z,p2.z));
+    }
+
+    template<typename T,typename U>
+    Point3<T> operator*(U u,const Point3<T>& p){
+        return p * u;
+    }
+
 
     template<typename>
     class Normal3;
@@ -538,9 +556,9 @@ namespace tracer {
     using Bounds2i = Bounds2<int>;
 
     template<typename T>
-    Bounds2<T> Intersect(const Bounds2<T> &b1, const Bounds2<T> &b2) {
+    Bounds2<T> intersect(const Bounds2<T> &b1, const Bounds2<T> &b2) {
 
-        return Bounds2<T>(Max(b1.low, b2.low), Min(b1.high, b2.high));
+        return Bounds2<T>(max(b1.low, b2.low), min(b1.high, b2.high));
     }
     using Point2f = Point2<real>;
     using Point3f = Point3<real>;
@@ -612,29 +630,33 @@ namespace tracer {
         Bounds3() {
             T minNum = std::numeric_limits<T>::lowest();
             T maxNum = std::numeric_limits<T>::max();
-            pMin = Point3<T>(maxNum, maxNum, maxNum);
-            pMax = Point3<T>(minNum, minNum, minNum);
+            low = Point3<T>(maxNum, maxNum, maxNum);
+            high = Point3<T>(minNum, minNum, minNum);
         }
-        explicit Bounds3(const Point3<T> &p) : pMin(p), pMax(p) {}
+        explicit Bounds3(const Point3<T> &p) : low(p), high(p) {}
         Bounds3(const Point3<T> &p1, const Point3<T> &p2)
-                : pMin(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
+                : low(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
                        std::min(p1.z, p2.z)),
-                  pMax(std::max(p1.x, p2.x), std::max(p1.y, p2.y),
+                  high(std::max(p1.x, p2.x), std::max(p1.y, p2.y),
                        std::max(p1.z, p2.z)) {}
-        const Point3<T> &operator[](int i) const;
-        Point3<T> &operator[](int i);
+        const Point3<T> &operator[](int i) const{
+            return i == 0 ? low : high;
+        }
+        Point3<T> &operator[](int i){
+            return i == 0 ? low : high;
+        }
         bool operator==(const Bounds3<T> &b) const {
-            return b.pMin == pMin && b.pMax == pMax;
+            return b.pMin == low && b.pMax == high;
         }
         bool operator!=(const Bounds3<T> &b) const {
-            return b.pMin != pMin || b.pMax != pMax;
+            return b.pMin != low || b.pMax != high;
         }
         Point3<T> corner(int corner) const {
             return Point3<T>((*this)[(corner & 1)].x,
                              (*this)[(corner & 2) ? 1 : 0].y,
                              (*this)[(corner & 4) ? 1 : 0].z);
         }
-        Vector3<T> diagonal() const { return pMax - pMin; }
+        Vector3<T> diagonal() const { return high - low; }
         T surface_area() const {
             Vector3<T> d = diagonal();
             return 2 * (d.x * d.y + d.x * d.z + d.y * d.z);
@@ -654,53 +676,166 @@ namespace tracer {
         }
 
         Vector3<T> offset(const Point3<T> &p) const {
-            Vector3<T> o = p - pMin;
-            if (pMax.x > pMin.x) o.x /= pMax.x - pMin.x;
-            if (pMax.y > pMin.y) o.y /= pMax.y - pMin.y;
-            if (pMax.z > pMin.z) o.z /= pMax.z - pMin.z;
+            Vector3<T> o = p - low;
+            if (high.x > low.x) o.x /= high.x - low.x;
+            if (high.y > low.y) o.y /= high.y - low.y;
+            if (high.z > low.z) o.z /= high.z - low.z;
             return o;
         }
         void bounding_sphere(Point3<T> *center, real *radius) const {
-            *center = (pMin + pMax) / 2;
-            *radius = Inside(*center, *this) ? Distance(*center, pMax) : 0;
+            *center = (low + high) / 2;
+            *radius = Inside(*center, *this) ? Distance(*center, high) : 0;
         }
         template <typename U>
         explicit operator Bounds3<U>() const {
-            return Bounds3<U>((Point3<U>)pMin, (Point3<U>)pMax);
+            return Bounds3<U>((Point3<U>)low, (Point3<U>)high);
         }
-        bool IntersectP(const Ray &ray, real *hitt0 = nullptr,
+        bool intersect_p(const Ray &ray, real *hitt0 = nullptr,
                         real *hitt1 = nullptr) const;
-        inline bool IntersectP(const Ray &ray, const Vector3f &invDir,
+        bool intersect_p(const Ray &ray, const Vector3f &invDir,
                                const int dirIsNeg[3]) const;
 
-        Point3<T> pMin, pMax;
+        Point3<T> low, high;
     };
 
     using Bounds3f = Bounds3<real>;
     using Bounds3i = Bounds3<int>;
 
+
+    template <typename T>
+    Bounds3<T> Union(const Bounds3<T> &b, const Point3<T> &p) {
+        Bounds3<T> ret;
+        ret.low = min(b.low, p);
+        ret.high = max(b.high, p);
+        return ret;
+    }
+
+    template <typename T>
+    Bounds3<T> Union(const Bounds3<T> &b1, const Bounds3<T> &b2) {
+        Bounds3<T> ret;
+        ret.low = min(b1.low, b2.low);
+        ret.high = max(b1.high, b2.high);
+        return ret;
+    }
+
+
     class Ray{
     public:
         Ray(const Point3f& o, const Vector3f& d,real t_min = 0,real t_max = REAL_MAX)
-                :o(o),d(d),t_min(t_min),t_max(t_max)
+                :o(o),d(d),t(0),t_min(t_min),t_max(t_max)
         {}
         Ray()
                 :Ray(Point3f(),Vector3f(1,0,0))
         {}
 
-        Point3f operator()(real t) const{
-            return o + d * t;
+        Point3f operator()(real time) const{
+            return o + d * time;
         }
 
 
         Point3f o;
         Vector3f d;
-        //todo add t?
+        real t;
         mutable real t_min;
         mutable real t_max;
     };
 
+    template <typename T>
+    inline bool Bounds3<T>::intersect_p(const Ray &ray, real *hitt0,
+                                       real *hitt1) const {
+        real t0 = 0, t1 = ray.t_max;
+        for (int i = 0; i < 3; ++i) {
+            // Update interval for _i_th bounding box slab
+            real invRayDir = 1 / ray.d[i];
+            real tNear = (low[i] - ray.o[i]) * invRayDir;
+            real tFar = (high[i] - ray.o[i]) * invRayDir;
 
+            // Update parametric interval from slab intersection $t$ values
+            if (tNear > tFar) std::swap(tNear, tFar);
+
+            // Update _tFar_ to ensure robust ray--bounds intersection
+            tFar *= 1 + 0.0000001;
+            t0 = tNear > t0 ? tNear : t0;
+            t1 = tFar < t1 ? tFar : t1;
+            if (t0 > t1) return false;
+        }
+        if (hitt0) *hitt0 = t0;
+        if (hitt1) *hitt1 = t1;
+        return true;
+    }
+
+    template <typename T>
+    inline bool Bounds3<T>::intersect_p(const Ray &ray, const Vector3f &invDir,
+                                       const int dirIsNeg[3]) const {
+        const Bounds3f &bounds = *this;
+        // Check for ray intersection against $x$ and $y$ slabs
+        real tMin = (bounds[dirIsNeg[0]].x - ray.o.x) * invDir.x;
+        real tMax = (bounds[1 - dirIsNeg[0]].x - ray.o.x) * invDir.x;
+        real tyMin = (bounds[dirIsNeg[1]].y - ray.o.y) * invDir.y;
+        real tyMax = (bounds[1 - dirIsNeg[1]].y - ray.o.y) * invDir.y;
+
+        // Update _tMax_ and _tyMax_ to ensure robust bounds intersection
+        tMax *= 1 + 0.0000001;
+        tyMax *= 1 + 0.0000001;
+        if (tMin > tyMax || tyMin > tMax) return false;
+        if (tyMin > tMin) tMin = tyMin;
+        if (tyMax < tMax) tMax = tyMax;
+
+        // Check for ray intersection against $z$ slab
+        real tzMin = (bounds[dirIsNeg[2]].z - ray.o.z) * invDir.z;
+        real tzMax = (bounds[1 - dirIsNeg[2]].z - ray.o.z) * invDir.z;
+
+        // Update _tzMax_ to ensure robust bounds intersection
+        tzMax *= 1 + 0.0000001;
+        if (tMin > tzMax || tzMin > tMax) return false;
+        if (tzMin > tMin) tMin = tzMin;
+        if (tzMax < tMax) tMax = tzMax;
+        return (tMin < ray.t_max) && (tMax > 0);
+    }
+
+    template <typename T>
+    inline T dot(const Normal3<T> &n1, const Vector3<T> &v2) {
+        return n1.x * v2.x + n1.y * v2.y + n1.z * v2.z;
+    }
+
+    template <typename T>
+    inline T dot(const Vector3<T> &n1, const Vector3<T> &v2) {
+        return n1.x * v2.x + n1.y * v2.y + n1.z * v2.z;
+    }
+
+    template <typename T>
+    inline T dot(const Vector3<T> &v1, const Normal3<T> &n2) {
+        return v1.x * n2.x + v1.y * n2.y + v1.z * n2.z;
+    }
+
+    template <typename T>
+    inline T dot(const Normal3<T> &n1, const Normal3<T> &n2) {
+        return n1.x * n2.x + n1.y * n2.y + n1.z * n2.z;
+    }
+
+}
+
+namespace std{
+    template<>
+    struct hash<tracer::Point3f>{
+        size_t operator()(const tracer::Point3f& p) const{
+            return ::hash(p.x,p.y,p.z);
+        }
+    };
+
+    template<>
+    struct hash<tracer::Point2f>{
+        size_t operator()(const tracer::Point2f& p) const{
+            return ::hash(p.x,p.y);
+        }
+    };
+
+    template<>
+    struct hash<tracer::Normal3f>{
+        size_t operator()(const tracer::Normal3f& p) const{
+            return ::hash(p.x,p.y,p.z);
+        }
+    };
 }
 
 #endif //TRACER_GEOMETRY_HPP

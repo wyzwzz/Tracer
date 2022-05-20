@@ -9,7 +9,9 @@
 
 TRACER_BEGIN
 
-RC<Aggregate> create_bvh_accel();
+    RC<Primitive> create_geometric_primitive(
+            const RC<Shape>& shape,const RC<Material>& material,
+            const MediumInterface& mi);
 
 
 TRACER_END

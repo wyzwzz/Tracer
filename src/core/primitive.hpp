@@ -7,6 +7,7 @@
 
 #include "utility/geometry.hpp"
 #include "common.hpp"
+#include "medium.hpp"
 TRACER_BEGIN
 /**
  * 包装Shape和Material
@@ -17,6 +18,7 @@ public:
 
     virtual bool intersect(const Ray& ray) const noexcept = 0;
 
+    //note ray.t_min and ray.t_max is mutable
     virtual bool intersect_p(const Ray& ray,SurfaceIntersection* isect) const noexcept = 0;
 
     virtual Bounds3f world_bound()  const noexcept = 0;
@@ -24,7 +26,10 @@ public:
 
 class GeometricPrimitive:public Primitive{
 public:
-    GeometricPrimitive();
+    GeometricPrimitive(const RC<const Shape>& shape,
+                       const RC<const Material>& material,
+                       const MediumInterface& mi
+                       );
 
     bool intersect(const Ray& ray) const noexcept override;
 
@@ -34,7 +39,7 @@ public:
 private:
     RC<const Shape> shape;
     RC<const Material> material;
-//    MediumInterface medium_inteface;
+    MediumInterface medium_interface;
 };
 
 TRACER_END
