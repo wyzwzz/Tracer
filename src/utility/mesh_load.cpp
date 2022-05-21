@@ -25,8 +25,40 @@ TRACER_BEGIN
         const auto& attrib = reader.GetAttrib();
         const auto& shapes = reader.GetShapes();
         const auto& materials = reader.GetMaterials();
-        //todo load materials
+        for(const auto& m:materials){
+            model.material.emplace_back();
+            auto& material = model.material.back();
+            std::copy(m.ambient,m.ambient+3,material.ambient);//copy ambient
+            std::copy(m.diffuse,m.diffuse+3,material.diffuse);
+            std::copy(m.specular,m.specular+3,material.specular);
+            std::copy(m.transmittance,m.transmittance+3,material.transmittance);
+            std::copy(m.emission,m.emission+3,material.emission);
+            material.shininess = m.shininess;
+            material.ior = m.ior;
+            material.dissolve = m.dissolve;
+            material.illum = m.illum;
 
+            material.map_ka = m.ambient_texname;
+            material.map_kd = m.diffuse_texname;
+            material.map_ks = m.specular_texname;
+            material.map_ns = m.specular_highlight_texname;
+            material.map_bump = m.bump_texname;
+            material.disp = m.displacement_texname;
+            material.map_d = m.displacement_texname;
+            material.refl = m.reflection_texname;
+
+            material.roughness = m.roughness;
+            material.metallic = m.metallic;
+            material.sheen = m.sheen;
+            material.clearcoat_thickness = m.clearcoat_thickness;
+            material.clearcoat_roughness = m.clearcoat_roughness;
+
+            material.map_pr = m.roughness_texname;
+            material.map_pm = m.metallic_texname;
+            material.map_ps = m.sheen_texname;
+            material.map_ke = m.emissive_texname;
+            material.norm = m.normal_texname;
+        }
         std::unordered_map<vertex_t, uint32_t> unique_vertices{};
 
         LOG_INFO("load shape count: {}",shapes.size());
@@ -38,6 +70,7 @@ TRACER_BEGIN
             LOG_INFO("shape {}",shape.name);
             LOG_INFO("triangle count {0}", triangle_count);
             LOG_INFO("vertex count {0}", vertex_count);
+            LOG_INFO("shape material count {}",shape.mesh.material_ids.size());
             model.mesh.emplace_back();
             auto& mesh = model.mesh.back();
             mesh.name = shape.name;
@@ -57,6 +90,9 @@ TRACER_BEGIN
                     mesh.vertices.push_back(vertex);
                 }
                 mesh.indices.push_back(unique_vertices[vertex]);
+            }
+            for(const auto& m_id:shape.mesh.material_ids){
+                mesh.materials.push_back(m_id);
             }
         }
         return model;

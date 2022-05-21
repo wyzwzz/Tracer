@@ -13,6 +13,7 @@ TRACER_BEGIN
     struct SurfacePoint{
         Point3f pos;
         Point2f uv;
+        Normal3f n;
         MediumInterface mi;
     };
 
@@ -23,6 +24,7 @@ TRACER_BEGIN
 
         Vector3f dpdu,dpdv;
         Normal3f dndu,dndv;
+        Normal3f map_n;
 
     };
 

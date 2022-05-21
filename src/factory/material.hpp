@@ -11,8 +11,10 @@
 TRACER_BEGIN
 
 RC<Material> create_phong_material(
-        RC<const Texture2D> map_d;
-
+        RC<const Texture2D> map_ka,
+        RC<const Texture2D> map_kd,
+        RC<const Texture2D> map_ks,
+        RC<const Texture2D> map_ns
         );
 
 TRACER_END

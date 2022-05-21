@@ -31,7 +31,20 @@ TRACER_BEGIN
             other.destroy();
             return *this;
         }
-        T& at(int x,int y){
+
+        template<typename U>
+        Image2D& operator*=(const U& u){
+            for(int i = 0; i < w * h; ++i){
+                data[i] *= u;
+            }
+            return *this;
+        }
+
+        T& operator()(int x,int y) const{
+            return at(x,y);
+        }
+
+        T& at(int x,int y) const{
             return data[x + y * w];
         }
 

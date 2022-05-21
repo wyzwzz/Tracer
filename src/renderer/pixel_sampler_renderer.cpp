@@ -65,7 +65,7 @@ TRACER_BEGIN
                             Spectrum L(0.0);
                             if(ray_weight > 0.0){
                                 L = eval_pixel_li(scene,ray);
-                                L = {std::max(0.f,ray.d.x),std::max(0.f,ray.d.y),std::max(0.f,ray.d.z)};
+//                                L = {std::max(0.f,ray.d.x),std::max(0.f,ray.d.y),std::max(0.f,ray.d.z)};
                             }
                             //add camera ray's contribution to pixel
                             //todo replace Spectrum Class

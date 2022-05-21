@@ -266,6 +266,14 @@ namespace tracer {
         }
 
         template<typename U>
+        Point3<T> &operator*=(const Point3<U>& f) {
+            x *= f.x;
+            y *= f.y;
+            z *= f.z;
+            return *this;
+        }
+
+        template<typename U>
         Point3<T> operator/(U f) const {
             double inv = (double) 1 / f;
             return Point3<T>(inv * x, inv * y, inv * z);
@@ -343,6 +351,7 @@ namespace tracer {
         explicit Vector3(const Point3<T> &p)
         :x(p.x),y(p.y),z(p.z)
         {}
+        explicit Vector3(const Normal3<T> &n);
 #ifndef NDEBUG
         // The default versions of these are fine for release builds; for debug
         // we define them so that we can add the Assert checks.
@@ -411,7 +420,6 @@ namespace tracer {
         Vector3<T> operator-() const { return Vector3<T>(-x, -y, -z); }
         double length_squared() const { return x * x + y * y + z * z; }
         double length() const { return std::sqrt(length_squared()); }
-        explicit Vector3(const Normal3<T> &n);
 
         // Vector3 Public Data
         T x, y, z;
@@ -513,6 +521,18 @@ namespace tracer {
     };
     using Normal3f = Normal3<real>;
 
+    template<typename T>
+    Vector3<T> operator*(T t,const Vector3<T>& v){
+        return v * t;
+    }
+
+    template<typename T>
+    Vector3<T>::Vector3(const Normal3<T> &n)
+    :x(n.x),y(n.y),z(n.z)
+    {
+
+    }
+
     template <typename T>
     inline Vector3<T> normalize(const Vector3<T> &v) {
         return v / v.length();
@@ -562,11 +582,14 @@ namespace tracer {
     }
     using Point2f = Point2<real>;
     using Point3f = Point3<real>;
+    using Point3b = Point3<uint8_t>;
     using Vector3i = Vector3<int>;
     using Vector2i = Vector2<int>;
     using Vector3f = Vector3<real>;
     using Vector2f = Vector2<real>;
     using Bounds2f = Bounds2<real>;
+    using Color3b = Point3b;
+    using Color3f = Point3f;
 
     class Bounds2iIterator : public std::forward_iterator_tag {
     public:

@@ -7,6 +7,7 @@
 
 #include "geometry.hpp"
 #include "core/texture.hpp"
+#include "utility/image.hpp"
 TRACER_BEGIN
 
     struct material_t;
@@ -26,10 +27,12 @@ TRACER_BEGIN
     struct material_t{
         std::string name;
 
+        //todo change to Spectrum
         real ambient[3];
         real diffuse[3];
         real specular[3];
         real transmittance[3];
+
         real emission[3];
         real shininess;
         real ior;//index of refraction
@@ -52,21 +55,27 @@ TRACER_BEGIN
         //10 Casts shadows onto invisible surfaces
         int illum;
 
-        RC<Texture2D> map_ka;
-        RC<Texture2D> map_kd;
-        RC<Texture2D> map_ks;
-        RC<Texture2D> map_ns;
-        RC<Texture2D> map_bump;
-        RC<Texture2D> disp;
-        RC<Texture2D> map_d;
-        RC<Texture2D> refl;
+        std::string map_ka;
+        std::string map_kd;
+        std::string map_ks;
+        std::string map_ns;
+        std::string map_bump;
+        std::string disp;
+        std::string map_d;//displayment
+        std::string refl;
 
         //PBR extension
-        RC<Texture2D> map_pr;//roughness
-        RC<Texture2D> map_pm;//metallic
-        RC<Texture2D> map_ps;//sheen
-        RC<Texture2D> map_ke;
-        RC<Texture2D> norm;
+        real roughness;
+        real metallic;
+        real sheen;
+        real clearcoat_thickness;
+        real clearcoat_roughness;
+
+        std::string map_pr;//roughness
+        std::string map_pm;//metallic
+        std::string map_ps;//sheen
+        std::string map_ke;
+        std::string norm;
     };
 
     struct mesh_t
@@ -76,7 +85,7 @@ TRACER_BEGIN
         std::vector<int> indices;
         //一个mesh可以对应多个material
         //一个三角形或者shape可以单独对应一个material
-        std::vector<material_t*> materials;
+        std::vector<int> materials;
     };
 
     struct model_t{

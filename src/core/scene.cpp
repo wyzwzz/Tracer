@@ -3,18 +3,21 @@
 //
 #include "core/scene.hpp"
 #include "factory/scene.hpp"
-
+#include "core/aggregate.hpp"
 TRACER_BEGIN
 
     class GeneralScene:public Scene{
     private:
     RC<const Camera> scene_camera;
+    RC<Aggregate> accel;
     public:
         ~GeneralScene() override {}
 
         GeneralScene() = default;
 
-        GeneralScene(const RC<Aggregate>& accel){
+        GeneralScene(const RC<Aggregate>& accel)
+        :accel(accel)
+        {
 
         }
 
@@ -27,11 +30,11 @@ TRACER_BEGIN
         }
 
         bool intersect(const Ray& ray) const override{
-            return false;
+            return accel->intersect(ray);
         }
 
         bool intersect_p(const Ray& ray,SurfaceIntersection* isect) const override{
-            return false;
+            return accel->intersect_p(ray,isect);
         }
     };
 

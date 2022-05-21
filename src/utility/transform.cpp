@@ -118,6 +118,8 @@ namespace tracer{
         camera_to_world.m[1][2] = dir.y;
         camera_to_world.m[2][2] = dir.z;
         camera_to_world.m[3][2] = 0.0;
+        auto inv = inverse(camera_to_world);
+        auto m = Matrix4x4::mul(camera_to_world,inv);
         return Transform(inverse(camera_to_world),camera_to_world);
     }
 

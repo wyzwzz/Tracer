@@ -134,18 +134,21 @@ TRACER_BEGIN
 
         if(t < ray.t_min || t > ray.t_max) return false;
         *hit_t = t;
-        ray.t_max = t;
+//        ray.t_max = t;
 
         const Point2f uvA = mesh->uv[vertex[0]];
         const Point2f uvB = mesh->uv[vertex[1]];
         const Point2f uvC = mesh->uv[vertex[2]];
 
+        const Vector3f nA = (Vector3f)mesh->n[vertex[0]];
+        const Vector3f nB = (Vector3f)mesh->n[vertex[1]];
+        const Vector3f nC = (Vector3f)mesh->n[vertex[2]];
         //todo
 
         isect->uv = uvA + alpha * (uvB - uvA) + beta * (uvC - uvA);
 
         isect->pos = ray(t);
-
+        isect->map_n = Normal3f(nA + alpha * (nB - nA) + beta * (nC - nA));
 
         return true;
     }

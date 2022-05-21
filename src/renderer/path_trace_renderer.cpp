@@ -3,6 +3,8 @@
 //
 #include "renderer/pixel_sampler_renderer.hpp"
 #include "factory/renderer.hpp"
+#include "core/scene.hpp"
+#include "core/material.hpp"
 TRACER_BEGIN
 class PathTraceRenderer:public PixelSamplerRenderer{
 public:
@@ -11,10 +13,21 @@ public:
     {}
 
     Spectrum eval_pixel_li(const Scene& scene,const Ray& ray) const override{
-        return Spectrum(1.f);
+        SurfaceIntersection isect;
+        if(scene.intersect_p(ray,&isect)){
+            auto color = isect.material->evaluate(isect.uv);
+            return color;
+        }
+        else
+            return Spectrum(0.0,0.0,0.0);
     }
 
 };
+
+
+
+
+
     RC<Renderer> create_pt_renderer(const PTRendererParams& params){
         return newBox<PathTraceRenderer>(params);
     }

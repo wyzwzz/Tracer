@@ -14,6 +14,18 @@
 专门设置一个TriangleMesh类用于存放所有的mesh的顶点数据 在Triangle类中存放索引即可
 但是这样子每一个Triangle对象会需要一个GeometricPrimitive包装 GeometricPrimitive虽然只需要存储指向材质和shape的ptr 但是也是不小的开销
 另一种思路是 专门创建一个TriangleBVH的shape也是一种思路 这样子的话一个Triangle Mesh只需要一个GeometricPrimitive
+比较麻烦的是
+### aggregate
+#### BVH
+使用启发式分割算法 一个包围盒里面的子包围的总面积占比应该尽可能少
+沿着最大变化的轴 均匀分割成若干个Bucket 分别计算每个Primitive落在哪个Bucket
+最后计算沿着N_BUCKET-1个轴分割时各自的cost
+cost = 1 + left_count * left_bounds_area / total_bounds_area + right_count * right_bounds_area / total_bounds_area
+另外在分割结束的时候 primitives会变成递归先序遍历得到的叶节点顺序
+创建一个LinearNode数组 用于存储所有的节点 包括子节点和叶节点 循序是递归先序遍历 等价于DFS
+每个节点需要存储第二个子节点在数组中的偏移 默认下一个子节点就是当前节点+1
+因为BVH树是必定同时有左右节点的
+
 ## 渲染器
 ### PathTrace 路径追踪
 

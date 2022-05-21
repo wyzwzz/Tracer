@@ -23,7 +23,7 @@ TRACER_BEGIN
                        const Point3f& cam_pos,const Point3f& target,const Vector3f& up,
                        real fov,real lens_radius,real focal_dist)
        {
-            this->camera_to_world = look_at(cam_pos,target,up);
+            this->camera_to_world = inverse(look_at(cam_pos,target,up));
             this->cam_pos = cam_pos;
             this->dir = normalize(target-cam_pos);
             this->focal_distance = focal_dist;
