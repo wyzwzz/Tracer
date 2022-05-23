@@ -144,11 +144,35 @@ TRACER_BEGIN
         const Vector3f nB = (Vector3f)mesh->n[vertex[1]];
         const Vector3f nC = (Vector3f)mesh->n[vertex[2]];
         //todo
-
+        isect->n = (Normal3f)normalize(cross(AB,AC));
         isect->uv = uvA + alpha * (uvB - uvA) + beta * (uvC - uvA);
+        isect->wo = -ray.d;
 
         isect->pos = ray(t);
         isect->map_n = Normal3f(nA + alpha * (nB - nA) + beta * (nC - nA));
+
+        auto compute_ss_ts = [&](const Vector3f& AB,const Vector3f& AC,
+                const Vector2f& ab,const Vector2f& ac,const Vector3f& n,
+                Vector3f& ss,Vector3f& ts){
+            const real m00 = ab.x, m01 = ab.y;
+            const real m10 = ac.x, m11 = ac.y;
+            const real det = m00 * m11 - m01 * m10;
+            if(det){
+                const real inv_det = 1 / det;
+                ss  = normalize(m11 * inv_det * AB - m01 * inv_det * AC);
+                ts = cross(n,ss);//todo n x ss ?
+            }
+            else{
+                Vector3f v2,v3;
+                coordinate(n,v2,v3);
+            }
+        };
+        //compute dpdu dpdv
+        compute_ss_ts(AB,AC,Vector2f(uvB - uvA),Vector2f(uvC-uvA),(Vector3f)isect->n,isect->dpdu,isect->dpdv);
+
+        //compute dndu dndv
+        compute_ss_ts(nB-nA,nC-nA,Vector2f(uvB-uvA),Vector2f(uvC-uvA),(Vector3f)isect->map_n,isect->dndu,isect->dndv);
+
 
         return true;
     }

@@ -7,6 +7,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <memory>
+#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -26,15 +27,17 @@ class Ray;
 class Renderer;
 class Primitive;
 class MediumInterface;
-
+class BSDF;
 class SurfaceIntersection;
+class Light;
+class EnvironmentLight;
 
     using real = float;
 
-using Spectrum = glm::vec3;
+//using Spectrum = glm::vec3;
 
 
-
+    constexpr real eps = real(3e-4);
 
     template<typename T>
     constexpr std::enable_if_t<std::is_floating_point_v<T>, T>
@@ -99,6 +102,9 @@ constexpr real REAL_MAX = std::numeric_limits<real>::max();
     {
         return std::make_unique<T>(std::forward<Args>(args)...);
     }
+
+    template<typename T>
+    using Span = std::vector<T>;
 
     //
 

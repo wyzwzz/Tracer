@@ -20,11 +20,7 @@ TRACER_BEGIN
             return 1;
         }
 
-        Spectrum evaluate(const SurfaceIntersection& isect) const noexcept {
-            return {};
-        }
-
-        Spectrum evaluate(const Point2f& uv) const noexcept {
+        Spectrum evaluate_impl(const Point2f& uv) const noexcept override{
             return constant;
         }
     private:

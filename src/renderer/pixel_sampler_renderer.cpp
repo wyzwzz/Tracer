@@ -64,12 +64,12 @@ TRACER_BEGIN
                             //evaluate radiance along ray
                             Spectrum L(0.0);
                             if(ray_weight > 0.0){
-                                L = eval_pixel_li(scene,ray);
+                                L = eval_pixel_li(scene,ray,*sampler,arena);
 //                                L = {std::max(0.f,ray.d.x),std::max(0.f,ray.d.y),std::max(0.f,ray.d.z)};
                             }
                             //add camera ray's contribution to pixel
                             //todo replace Spectrum Class
-                            if(std::isfinite(L.x) && std::isfinite(L.y) && std::isfinite(L.z)){
+                            if(std::isfinite(L.r) && std::isfinite(L.g) && std::isfinite(L.b)){
 
                                 film_tile->add_sample({pixel_x,pixel_y},L);
 

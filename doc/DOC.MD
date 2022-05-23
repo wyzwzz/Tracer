@@ -4,6 +4,9 @@
     2.每一个tile的渲染是单线程的，即依次渲染tile里的每一个pixel，每个tile创建一个arena，当一个pixel渲染完后reset arena
     3.每一个像素的渲染，首先从Camera生成光线开始，光线的生成涉及到对像素在film上的采样和相机透镜位置上的采样，暂时不考虑时间
     4.生成光线后，接着是对场景的求交，找到交点处的几何信息和反射模型
+    5.交点处的几何信息
+    6.根据交点的几何信息从Material中得到Shading相关的信息
+
 ## 主要的一些接口类
 ### filter
 用于image reconstruction 目前只实现高斯过滤
@@ -14,7 +17,11 @@
 专门设置一个TriangleMesh类用于存放所有的mesh的顶点数据 在Triangle类中存放索引即可
 但是这样子每一个Triangle对象会需要一个GeometricPrimitive包装 GeometricPrimitive虽然只需要存储指向材质和shape的ptr 但是也是不小的开销
 另一种思路是 专门创建一个TriangleBVH的shape也是一种思路 这样子的话一个Triangle Mesh只需要一个GeometricPrimitive
-比较麻烦的是
+pi = p0 + ui * dpdu + vi * dpdv
+ u2 - u0, v2 - v0   dpdu     p2 - p0
+                  *       =  
+ u1 - u0, v1 - v0   dpdv     p1 - p0
+
 ### aggregate
 #### BVH
 使用启发式分割算法 一个包围盒里面的子包围的总面积占比应该尽可能少
@@ -25,6 +32,16 @@ cost = 1 + left_count * left_bounds_area / total_bounds_area + right_count * rig
 创建一个LinearNode数组 用于存储所有的节点 包括子节点和叶节点 循序是递归先序遍历 等价于DFS
 每个节点需要存储第二个子节点在数组中的偏移 默认下一个子节点就是当前节点+1
 因为BVH树是必定同时有左右节点的
+想要找到最近的交点 可以在每一次找到交点时 改变ray的t_max 每次计算交点的t 只有t_min < t < t_max才被判定为相交
+
+### SurfaceIntersection
+根据相交点生成新的光线时 应该根据表面的法向量对光线的起点进行一定程度的偏移 不然相交点还是原先的旧点
+### Light
+#### AreaLight
+##### DiffuseLight
+由shape构成 均匀的发光 以后可能可以支持Ke ImageTexture
+#### EnvironmentLight
+环境光
 
 ## 渲染器
 ### PathTrace 路径追踪

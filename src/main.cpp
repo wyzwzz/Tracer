@@ -25,7 +25,7 @@ int main(int argc,char** argv){
                                           {0,12.546,30.865},
                                           {0,0.985,-0.174},
                                           PI_r*45.0/180.0,
-                                          0.025,10);
+                                          0.0,10);
 
     auto model = load_model_from_file("C:/Users/wyz/projects/RayTracer/data/CG2020-master/diningroom/diningroom.obj");
     std::vector<RC<Primitive>> primitives;
@@ -54,7 +54,11 @@ int main(int argc,char** argv){
         for(size_t i = 0; i < triangle_count; ++i){
             //todo handle emission material
             assert(mesh.materials[i] < materials.size());
-            primitives.emplace_back(create_geometric_primitive(triangles[i],materials[mesh.materials[i]],mi));
+            const auto& material = materials[mesh.materials[i]];
+            primitives.emplace_back(create_geometric_primitive(triangles[i],material,mi,
+                                                               materials_res[mesh.materials[i]].has_emission ?
+                                                               materials_res[mesh.materials[i]].map_ke->evaluate(Point2f()) :
+                                                               Spectrum()));
         }
     }
     LOG_INFO("load primitives count: {}",primitives.size());

@@ -3,6 +3,7 @@
 //
 #include "core/material.hpp"
 #include "core/texture.hpp"
+#include "core/intersection.hpp"
 #include "utility/logger.hpp"
 TRACER_BEGIN
 
@@ -20,6 +21,10 @@ TRACER_BEGIN
 
         virtual Spectrum evaluate(const Point2f& uv) const {
             return map_kd->evaluate(uv);
+        }
+
+        virtual SurfaceShadingPoint shading(const SurfaceIntersection& isect,MemoryArena& arena) const{
+            return {};
         }
     private:
         RC<const Texture2D> map_ka;

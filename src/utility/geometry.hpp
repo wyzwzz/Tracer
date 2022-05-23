@@ -116,6 +116,11 @@ namespace tracer {
             y = (T) p.y;
         }
 
+        template<typename U>
+        Point2(const Vector2<U>& v)
+        :x(v.x),y(v.y)
+        {}
+
         bool operator==(const Point2<T> &p) const { return x == p.x && y == p.y; }
 
         bool operator!=(const Point2<T> &p) const { return x != p.x || y != p.y; }
@@ -128,9 +133,11 @@ namespace tracer {
             return Point2(x + t, y + t);
         }
 
-        Point2 operator-(const Point2 &p) const {
+        Point2<T> operator-(const Point2 &p) const {
             return Point2(x - p.x, y - p.y);
         }
+
+
 
         Point2 operator-(T t) const {
             return Point2(x - t, y - t);
@@ -143,6 +150,10 @@ namespace tracer {
 
         Point2<T> operator-(const Vector2<T> &v) const {
             return Point2<T>(x - v.x, y - v.y);
+        }
+
+        Point2<T> operator+(const Vector2<T> &v) const {
+            return Point2<T>(x + v.x, y + v.y);
         }
 
         T x, y;
@@ -836,6 +847,30 @@ namespace tracer {
         return n1.x * n2.x + n1.y * n2.y + n1.z * n2.z;
     }
 
+
+    template<typename T>
+    inline void coordinate(const Vector3<T>& v1,Vector3<T>& v2,Vector3<T>& v3){
+        if(abs(v1.x) > std::abs(v1.y))
+            v2 = Vector3<T>(-v1.z,0,v1.x) / std::sqrt(v1.x*v1.x+v1.z*v1.z);
+        else
+            v2 = Vector3<T>(0,v1.z,-v1.y) / std::sqrt(v1.y*v1.y+v1.z*v1.z);
+        v3 = cross(v1,v2);
+    }
+
+    template <typename T>
+    inline T abs_dot(const Normal3<T> &n1, const Vector3<T> &v2) {
+        return std::abs(n1.x * v2.x + n1.y * v2.y + n1.z * v2.z);
+    }
+
+    template <typename T>
+    inline T abs_dot(const Vector3<T> &v1, const Normal3<T> &n2) {
+        return std::abs(v1.x * n2.x + v1.y * n2.y + v1.z * n2.z);
+    }
+
+    template <typename T>
+    inline T abs_dot(const Normal3<T> &n1, const Normal3<T> &n2) {
+        return std::abs(n1.x * n2.x + n1.y * n2.y + n1.z * n2.z);
+    }
 }
 
 namespace std{

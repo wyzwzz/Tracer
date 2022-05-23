@@ -15,6 +15,12 @@ TRACER_BEGIN
         Point2f uv;
         Normal3f n;
         MediumInterface mi;
+
+        Point3f eps_offset(const Vector3f& dir) const noexcept{
+            if(dot(n,dir) > 0)
+                return pos + (Vector3f)n * eps;
+            return pos - (Vector3f)n * eps;
+        }
     };
 
     class SurfaceIntersection:public SurfacePoint{
@@ -22,9 +28,16 @@ TRACER_BEGIN
         const Primitive* primitive = nullptr;
         const Material* material = nullptr;
 
+        Vector3f wo;
+
         Vector3f dpdu,dpdv;
-        Normal3f dndu,dndv;
+        Vector3f dndu,dndv;
         Normal3f map_n;
+
+    };
+
+    struct SurfaceShadingPoint{
+        const BSDF* bsdf = nullptr;
 
     };
 

@@ -21,6 +21,7 @@ TRACER_BEGIN
     }
 
     RC<Image2D<Color3b>> load_image_from_file(const std::string& filename){
+        stbi_set_flip_vertically_on_load(true);
         int w,h,nComp;
         auto d = stbi_load(filename.c_str(),&w,&h,&nComp,0);
         if(!d){
@@ -29,12 +30,21 @@ TRACER_BEGIN
         if(nComp == 3){
             return newRC<Image2D<Color3b>>(w,h,reinterpret_cast<Color3b*>(d));
         }
+        else if(nComp == 1){
+            LOG_INFO("load image with 1 component");
+            auto image = newRC<Image2D<Color3b>>(w,h);
+            auto p = image->get_raw_data();
+            for(int i = 0; i < w * h; ++i){
+                p[i] = {d[i],d[i],d[i]};
+            }
+            return image;
+        }
         else if(nComp == 4){
             LOG_INFO("load image with 4 component");
             auto image = newRC<Image2D<Color3b>>(w,h);
             auto p = image->get_raw_data();
             for(int i = 0; i < w * h; ++i){
-                p[i] = {d[i*3],d[i*3+1],d[i*3+2]};
+                p[i] = {d[i*4],d[i*4+1],d[i*4+2]};
             }
             return image;
         }
@@ -44,6 +54,7 @@ TRACER_BEGIN
     }
 
     RC<Image2D<Color3f>> load_hdr_from_file(const std::string& filename){
+        stbi_set_flip_vertically_on_load(true);
         int w,h,nComp;
         auto d = stbi_loadf(filename.c_str(),&w,&h,&nComp,0);
         if(!d){
@@ -120,7 +131,10 @@ TRACER_BEGIN
         textures.map_ks = _create_texture_from_file(material.map_ks,material.specular);
         textures.map_ns = _create_texture_from_file(material.map_ns,material.shininess);
         //todo light
-
+        textures.map_ke = _create_texture_from_file(material.map_ke,material.emission);
+        if(material.emission[0] > 0 || material.emission[1] > 0 || material.emission[2] > 0){
+            textures.has_emission = true;
+        }
 
 
         return textures;

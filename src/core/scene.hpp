@@ -19,6 +19,11 @@ public:
     virtual bool intersect(const Ray& ray) const = 0;
 
     virtual bool intersect_p(const Ray& ray,SurfaceIntersection* isect) const = 0;
+
+    Span<RC<const Light>> lights;
+
+    RC<const EnvironmentLight> environment_light;
+
 };
 
 TRACER_END

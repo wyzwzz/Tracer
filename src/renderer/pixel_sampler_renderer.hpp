@@ -6,7 +6,7 @@
 #define TRACER_PIXEL_SAMPLER_RENDERER_HPP
 
 #include "core/renderer.hpp"
-
+#include "utility/memory.hpp"
 TRACER_BEGIN
 
 
@@ -19,7 +19,7 @@ public:
     RenderTarget render(const Scene& scene,Film film) override;
 
 protected:
-    virtual Spectrum eval_pixel_li(const Scene& scene,const Ray& ray) const = 0;
+    virtual Spectrum eval_pixel_li(const Scene& scene,const Ray& ray,Sampler& sampler,MemoryArena& arena) const = 0;
 private:
     int worker_count;
     int tile_size;

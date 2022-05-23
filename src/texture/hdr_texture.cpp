@@ -20,13 +20,10 @@ TRACER_BEGIN
             return data->height();
         }
 
-        Spectrum evaluate(const SurfaceIntersection& isect) const noexcept {
+        Spectrum evaluate_impl(const Point2f& uv) const noexcept override{
             return {};
         }
 
-        Spectrum evaluate(const Point2f& uv) const noexcept {
-            return {};
-        }
     private:
         RC<Image2D<Color3f>> data;
 

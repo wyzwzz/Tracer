@@ -32,6 +32,7 @@ struct MaterialTexture{
     RC<Texture2D> map_ps;//sheen
     RC<Texture2D> map_ke;
     RC<Texture2D> norm;
+    bool has_emission = false;
 };
 struct material_t;
 MaterialTexture create_texture_from_file(const material_t& material);

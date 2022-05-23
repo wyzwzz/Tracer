@@ -9,6 +9,7 @@
 #include "utility/geometry.hpp"
 #include "core/filter.hpp"
 #include "utility/image.hpp"
+#include "core/spectrum.hpp"
 TRACER_BEGIN
 
 struct RenderTarget{

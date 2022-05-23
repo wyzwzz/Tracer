@@ -21,11 +21,7 @@ TRACER_BEGIN
             return data->height();
         }
 
-        Spectrum evaluate(const SurfaceIntersection& isect) const noexcept {
-            return {};
-        }
-
-        Spectrum evaluate(const Point2f& uv) const noexcept {
+        Spectrum evaluate_impl(const Point2f& uv) const noexcept override{
             auto v =  LinearSampler::Sample2D(*data.get(),uv.x,uv.y);
             //todo convert color3b to color3f
             return Spectrum(v.x/255.0,v.y/255.0,v.z/255.0);

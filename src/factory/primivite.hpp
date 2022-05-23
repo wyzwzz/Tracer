@@ -11,7 +11,7 @@ TRACER_BEGIN
 
     RC<Primitive> create_geometric_primitive(
             const RC<Shape>& shape,const RC<Material>& material,
-            const MediumInterface& mi);
+            const MediumInterface& mi,const Spectrum& emission);
 
 
 TRACER_END
