@@ -12,6 +12,8 @@ TRACER_BEGIN
 void write_image_to_hdr(const Image2D<Spectrum>&,
                         const std::string& filename);
 
+    void write_image_to_png(const Image2D<Color3b>& image,const std::string& filename);
+
 RC<Image2D<Color3b>> load_image_from_file(const std::string& filename);
 
 RC<Image2D<Color3f>> load_hdr_from_file(const std::string& filename);

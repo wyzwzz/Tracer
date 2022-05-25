@@ -10,6 +10,7 @@ TRACER_BEGIN
     private:
     RC<const Camera> scene_camera;
     RC<Aggregate> accel;
+
     public:
         ~GeneralScene() override {}
 

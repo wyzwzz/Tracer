@@ -1,6 +1,7 @@
 #include "core/renderer.hpp"
 #include "core/render.hpp"
 #include "core/scene.hpp"
+#include "core/light.hpp"
 #include "factory/filter.hpp"
 #include "factory/renderer.hpp"
 #include "factory/camera.hpp"
@@ -12,13 +13,14 @@
 #include "utility/image_file.hpp"
 #include "utility/logger.hpp"
 #include "utility/timer.hpp"
+#include <stdexcept>
 using namespace tracer;
 int main(int argc,char** argv){
-    auto filter = create_gaussin_filter(0.5,0.6);
+    auto filter = create_gaussin_filter(0.495,0.6);
     int image_w = 1920;
     int image_h = 1080;
 
-    PTRendererParams params{10,16,16};
+    PTRendererParams params{18,32,1024};
     auto renderer = create_pt_renderer(params);
     auto camera = create_thin_lens_camera((real)image_w/image_h,
                                           {0,12.72,31.85},
@@ -27,12 +29,21 @@ int main(int argc,char** argv){
                                           PI_r*45.0/180.0,
                                           0.0,10);
 
+//    auto camera = create_thin_lens_camera((real)image_w/image_h,
+//                                          {0,0,2.5},
+//                                          {0,0,0},
+//                                          {0,1,0},
+//                                          PI_r*60.0/180.0,
+//                                          0.0,10);
+
     auto model = load_model_from_file("C:/Users/wyz/projects/RayTracer/data/CG2020-master/diningroom/diningroom.obj");
+//    auto model = load_model_from_file("C:/Users/wyz/projects/RayTracer/data/CG2020-master/cornellbox/cornellbox.obj");
     std::vector<RC<Primitive>> primitives;
     LOG_INFO("load model's mesh count: {}",model.mesh.size());
     LOG_INFO("load model's material count: {}",model.material.size());
     std::vector<MaterialTexture> materials_res;
     std::vector<RC<Material>> materials;
+    Span<const Light*> area_lights;
     for(auto& m:model.material){
         auto material = create_texture_from_file(m);
         materials_res.emplace_back(material);
@@ -55,10 +66,18 @@ int main(int argc,char** argv){
             //todo handle emission material
             assert(mesh.materials[i] < materials.size());
             const auto& material = materials[mesh.materials[i]];
-            primitives.emplace_back(create_geometric_primitive(triangles[i],material,mi,
-                                                               materials_res[mesh.materials[i]].has_emission ?
-                                                               materials_res[mesh.materials[i]].map_ke->evaluate(Point2f()) :
-                                                               Spectrum()));
+            const auto& m_res = materials_res[mesh.materials[i]];
+//            primitives.emplace_back(create_geometric_primitive(triangles[i],material,mi,
+//                                                               m_res.has_emission ?
+//                                                               m_res.map_ke->evaluate(Point2f()) :
+//                                                               Spectrum()));
+            if(materials_res[mesh.materials[i]].has_emission){
+                primitives.emplace_back(create_geometric_primitive(triangles[i],material,mi,m_res.map_ke->evaluate(Point2f())));
+                area_lights.emplace_back(primitives.back()->as_area_light());
+            }
+            else{
+                primitives.emplace_back(create_geometric_primitive(triangles[i],material,mi,Spectrum()));
+            }
         }
     }
     LOG_INFO("load primitives count: {}",primitives.size());
@@ -68,12 +87,28 @@ int main(int argc,char** argv){
         bvh->build(std::move(primitives));
     }
     auto scene = create_general_scene(bvh);
+    scene->lights = area_lights;
     scene->set_camera(camera);
-    {
+    try{
         AutoTimer timer("render");
         auto render_target = renderer->render(*scene.get(), Film({image_w, image_h}, filter));
-        write_image_to_hdr(render_target.color, "tracer_test.hdr");
+        write_image_to_hdr(render_target.color, "tracer_test_diningroom_1024.hdr");
+        LOG_INFO("write hdr...");
+        auto& imgf = render_target.color;
+        Image2D<Color3b> imgu8(imgf.width(),imgf.height());
+        real inv_gamma = 1.0 / 2.2;
+        for(int i = 0; i < imgf.width(); i++){
+            for(int j = 0; j < imgf.height(); j++){
+                imgu8.at(i,j).x = std::clamp<int>(std::pow(imgf.at(i,j).r,inv_gamma) * 255,0,255);
+                imgu8.at(i,j).y = std::clamp<int>(std::pow(imgf.at(i,j).g,inv_gamma) * 255,0,255);
+                imgu8.at(i,j).z = std::clamp<int>(std::pow(imgf.at(i,j).b,inv_gamma) * 255,0,255);
+            }
+        }
+        write_image_to_png(imgu8,"tracer_test_diningroom_1024.png");
+        LOG_INFO("write png...");
     }
-
+    catch(const std::exception& e){
+        LOG_CRITICAL("exception: {}",e.what());
+    }
     return 0;
 }

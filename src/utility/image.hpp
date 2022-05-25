@@ -19,6 +19,9 @@ TRACER_BEGIN
             if(d){
                 std::copy(d,d+w*h,data.get());
             }
+            else{
+                memset(data.get(),0,sizeof(T)*width*height);
+            }
         }
         Image2D(Image2D&& other) noexcept
         :w(other.w),h(other.h),data(std::move(other.data))

@@ -12,14 +12,19 @@ TRACER_BEGIN
 struct BSDFSampleResult{
     Vector3f wi;
     Spectrum f;
-    real pdf;
+    real pdf = 0;
     bool is_delta = false;
+    bool is_valid(){
+        return wi && pdf > 0 && !!f;
+    }
 };
 
 class BSDF{
 public:
     BSDF(const BSDF&) = delete;
     BSDF& operator=(const BSDF&) = delete;
+
+    BSDF() = default;
 
     virtual ~BSDF() = default;
 
@@ -28,6 +33,8 @@ public:
     virtual BSDFSampleResult sample(const Vector3f& wo,const Sample3&) const = 0;
 
     virtual real pdf(const Vector3f& wi, const Vector3f& wo) const = 0;
+
+    virtual bool is_delta() const = 0;
 };
 
 

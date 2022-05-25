@@ -82,6 +82,7 @@ TRACER_BEGIN
                               attrib.vertices[3 * index.vertex_index + 2]};
                 vertex.n = {attrib.normals[3 * index.normal_index + 0], attrib.normals[3 * index.normal_index + 1],
                                  attrib.normals[3 * index.normal_index + 2]};
+                vertex.n.normalize();
                 vertex.uv = {attrib.texcoords[2 * index.texcoord_index + 0],
                                     attrib.texcoords[2 * index.texcoord_index + 1]};
                 if (unique_vertices.count(vertex) == 0)

@@ -27,6 +27,10 @@ TRACER_BEGIN
         const int film_width = film.width();
         const int film_height = film.height();
         const auto scene_camera = scene.get_camera();
+
+        auto sampler_prototype = newRC<SimpleUniformSampler>(42, false);
+        PerThreadNativeSamplers perthread_sampler(
+                thread_count, *sampler_prototype);
         parallel_for_2d(
                 thread_count,film_width,film_height,
                 tile_size,tile_size,
@@ -34,7 +38,8 @@ TRACER_BEGIN
                 {
 
                     //get sampler
-                    auto sampler = newBox<SimpleUniformSampler>(thread_idx);
+                    auto sampler = perthread_sampler.get_sampler(thread_idx);
+
 
                     //get tile
                     //tile_bound is [)
@@ -64,6 +69,7 @@ TRACER_BEGIN
                             //evaluate radiance along ray
                             Spectrum L(0.0);
                             if(ray_weight > 0.0){
+
                                 L = eval_pixel_li(scene,ray,*sampler,arena);
 //                                L = {std::max(0.f,ray.d.x),std::max(0.f,ray.d.y),std::max(0.f,ray.d.z)};
                             }

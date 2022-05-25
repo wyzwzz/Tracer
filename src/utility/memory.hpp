@@ -34,6 +34,9 @@ T* alloc_aligned(size_t count){
             for (auto &block : available_blocks) free_aligned(block.second);
         }
         void* alloc(size_t nBytes){
+            return _alloc(nBytes);
+        }
+        void* _alloc(size_t nBytes){
             const int align = alignof(std::max_align_t);
             static_assert(IsPowerOf2(align), "Minimum alignment not a power of two");
             nBytes = (nBytes + align - 1) & ~(align - 1);
@@ -64,11 +67,19 @@ T* alloc_aligned(size_t count){
         }
         template <typename T>
         T *alloc(size_t n = 1, bool run_constructor = true) {
-            T *ret = (T *)alloc(n * sizeof(T));
+            T *ret = (T *)_alloc(n * sizeof(T));
             if (run_constructor)
                 for (size_t i = 0; i < n; ++i) new (&ret[i]) T();
             return ret;
         }
+
+        template<typename T,typename... Args>
+        T* alloc_object(Args&&... args){
+            T *ret = (T*)_alloc(sizeof(T));
+            new (ret) T(std::forward<Args>(args)...);
+            return ret;
+        }
+
         void reset() {
             current_block_pos = 0;
             available_blocks.splice(available_blocks.begin(), used_blocks);

@@ -10,6 +10,7 @@
 #include "core/filter.hpp"
 #include "utility/image.hpp"
 #include "core/spectrum.hpp"
+#include "utility/logger.hpp"
 TRACER_BEGIN
 
 struct RenderTarget{
@@ -22,7 +23,7 @@ struct RenderTarget{
     public:
         struct TilePixel{
             Spectrum contrib_sum;
-            real filter_weight_sum;
+            real filter_weight_sum = 0;
         };
         class Tile{
         public:
@@ -44,6 +45,7 @@ struct RenderTarget{
                     for(int x = p0.x; x < p1.x; ++x){
                         Point2f offset = pos - Point2f(x+0.5,y+0.5);
                         real filter_weight = filter->eval(offset.x,offset.y);
+
                         auto& tile_pixel = get_pixel(Point2i(x,y));
                         tile_pixel.contrib_sum += li * filter_weight * sample_weight;
                         tile_pixel.filter_weight_sum += filter_weight;
@@ -102,10 +104,10 @@ struct RenderTarget{
         void write_render_target(RenderTarget& render_target){
             render_target.color = Image2D<Spectrum>(resolution.x,resolution.y);
             for(int y = 0; y < resolution.y; ++y){
-                for(int x= 0; x < resolution.x; ++x){
+                for(int x = 0; x < resolution.x; ++x){
                     const auto& pixel = get_pixel({x,y});
-                    assert(pixel.weight > 0);
-                    render_target.color.at(x,y) = pixel.color / pixel.weight;
+                    if(pixel.weight > 0)
+                        render_target.color.at(x,y) = pixel.color / pixel.weight;
                 }
             }
         }
@@ -117,7 +119,7 @@ struct RenderTarget{
 
         struct Pixel{
             Spectrum color;
-            real weight;
+            real weight = 0;
         };
         Box<Pixel[]> pixels;
         Pixel& get_pixel(const Point2i& p){

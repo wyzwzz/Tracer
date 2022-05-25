@@ -19,6 +19,9 @@ TRACER_BEGIN
                        3,
                        reinterpret_cast<const float*>(image.get_raw_data()));
     }
+    void write_image_to_png(const Image2D<Color3b>& image,const std::string& filename){
+        stbi_write_png(filename.c_str(),image.width(),image.height(),3,image.get_raw_data(),0);
+    }
 
     RC<Image2D<Color3b>> load_image_from_file(const std::string& filename){
         stbi_set_flip_vertically_on_load(true);
@@ -129,6 +132,7 @@ TRACER_BEGIN
         textures.map_ka = _create_texture_from_file(material.map_ka,material.ambient);
         textures.map_kd = _create_texture_from_file(material.map_kd,material.diffuse);
         textures.map_ks = _create_texture_from_file(material.map_ks,material.specular);
+        LOG_INFO("create specular texture: {} {} {}",material.specular[0],material.specular[1],material.specular[2]);
         textures.map_ns = _create_texture_from_file(material.map_ns,material.shininess);
         //todo light
         textures.map_ke = _create_texture_from_file(material.map_ke,material.emission);

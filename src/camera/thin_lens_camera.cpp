@@ -44,7 +44,7 @@ TRACER_BEGIN
                     focal_distance
             };
 
-            const Point2f disk_sample = ConcentricSampleDisk(camera_sample.pr_lens);
+            const Point2f disk_sample = ConcentricSampleDisk({camera_sample.pr_lens.x,camera_sample.pr_lens.y});
             const Point3f lens_pos = Point3f(
                     lens_radius * disk_sample.x,lens_radius*disk_sample.y,0.0
                     );

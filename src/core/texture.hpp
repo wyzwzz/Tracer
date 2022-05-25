@@ -29,8 +29,16 @@ public:
 
     virtual int height() const noexcept = 0;
 
-    virtual Spectrum evaluate(const SurfaceIntersection& isect) const noexcept {
-        return evaluate(isect.uv);
+
+    virtual real evaluate_s(const Point2f& uv) const noexcept{
+        const real u = wrapper_u(uv.x);
+        const real v = wrapper_v(uv.y);
+        auto ret = evaluate_impl({u,v});
+        if(inv_gamma != 1){
+            for(int i=0;i<SPECTRUM_COMPONET_COUNT;++i)
+                ret[i] = std::pow(ret[i],inv_gamma);
+        }
+        return ret.r;
     }
 
     virtual Spectrum evaluate(const Point2f& uv) const noexcept {
@@ -42,6 +50,14 @@ public:
                 ret[i] = std::pow(ret[i],inv_gamma);
         }
         return ret;
+    }
+
+    virtual Spectrum evaluate(const SurfaceIntersection& isect) const noexcept {
+        return evaluate(isect.uv);
+    }
+
+    virtual real evaluate_s(const SurfaceIntersection& isect) const noexcept {
+        return evaluate_s(isect.uv);
     }
 protected:
     real inv_gamma = 1;

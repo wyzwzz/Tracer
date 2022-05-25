@@ -403,6 +403,14 @@ namespace tracer {
         bool operator!=(const Vector3<T> &v) const {
             return x != v.x || y != v.y || z != v.z;
         }
+
+        bool operator!() const noexcept{
+           return !x && !y && !z;
+        }
+        operator bool() const noexcept{
+            return x && y && z;
+        }
+
         template <typename U>
         Vector3<T> operator*(U s) const {
             return Vector3<T>(s * x, s * y, s * z);
@@ -528,6 +536,14 @@ namespace tracer {
             return z;
         }
 
+        Normal3& normalize() {
+            auto len = length();
+            x /= len;
+            y /= len;
+            z /= len;
+            return *this;
+        }
+
         T x, y, z;
     };
     using Normal3f = Normal3<real>;
@@ -546,6 +562,11 @@ namespace tracer {
 
     template <typename T>
     inline Vector3<T> normalize(const Vector3<T> &v) {
+        return v / v.length();
+    }
+
+    template <typename T>
+    inline Normal3<T> normalize(const Normal3<T> &v) {
         return v / v.length();
     }
 
@@ -756,7 +777,7 @@ namespace tracer {
     class Ray{
     public:
         Ray(const Point3f& o, const Vector3f& d,real t_min = 0,real t_max = REAL_MAX)
-                :o(o),d(d),t(0),t_min(t_min),t_max(t_max)
+                :o(o),d(normalize(d)),t(0),t_min(t_min),t_max(t_max)
         {}
         Ray()
                 :Ray(Point3f(),Vector3f(1,0,0))
@@ -850,7 +871,7 @@ namespace tracer {
 
     template<typename T>
     inline void coordinate(const Vector3<T>& v1,Vector3<T>& v2,Vector3<T>& v3){
-        if(abs(v1.x) > std::abs(v1.y))
+        if(std::abs(v1.x) > std::abs(v1.y))
             v2 = Vector3<T>(-v1.z,0,v1.x) / std::sqrt(v1.x*v1.x+v1.z*v1.z);
         else
             v2 = Vector3<T>(0,v1.z,-v1.y) / std::sqrt(v1.y*v1.y+v1.z*v1.z);

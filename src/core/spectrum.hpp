@@ -27,6 +27,10 @@ TRACER_BEGIN
          return std::isfinite(r) && std::isfinite(g) && std::isfinite(b);
      }
 
+     bool operator!() const{
+         return is_back();
+     }
+
      Color3& operator+=(const Color3& rhs){
          r += rhs.r;
          g += rhs.g;
@@ -67,6 +71,10 @@ TRACER_BEGIN
          for(int i = 1; i < 3; i++)
              v = std::max(v,(*this)[i]);
          return v;
+     }
+
+     T lum() const{
+         return 0.2126f * r + 0.7152f * g + 0.0722f * b;
      }
 
     };

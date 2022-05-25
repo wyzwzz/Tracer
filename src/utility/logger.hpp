@@ -21,6 +21,8 @@ TRACER_BEGIN
 
 #define SET_LOG_LEVEL_CRITICAL spdlog::set_level(spdlog::level::critical);
 
+#define NOT_IMPL LOG_ERROR("this method is not imply yet!");
+
 TRACER_END
 
 #endif //TRACER_LOGGER_HPP

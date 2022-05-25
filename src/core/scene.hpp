@@ -20,7 +20,7 @@ public:
 
     virtual bool intersect_p(const Ray& ray,SurfaceIntersection* isect) const = 0;
 
-    Span<RC<const Light>> lights;
+    Span<const Light*> lights;
 
     RC<const EnvironmentLight> environment_light;
 

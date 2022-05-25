@@ -61,6 +61,7 @@ class EnvironmentLight;
 
     constexpr real PI_r = PI<real>;
     constexpr real invPI_r = invPI<real>;
+    constexpr real inv2PI_r = inv2PI<real>;
     constexpr real PIOver2_r = PIOver2<real>;
     constexpr real PIOver4_r = PIOver4<real>;
 

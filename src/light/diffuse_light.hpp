@@ -15,7 +15,11 @@ public:
 
     Spectrum light_emit(const SurfacePoint& sp,const Vector3f& w) const noexcept override;
 
-    real pdf() const noexcept override;
+    real pdf(const Point3f& ref,const Point3f& pos,const Normal3f& n) const noexcept override;
+
+    LightSampleResult sample_li(const SurfacePoint& ref,const Sample5&) const override;
+
+    LightEmitResult sample_le(const Sample5&) const override;
 
 private:
     const Spectrum emission;

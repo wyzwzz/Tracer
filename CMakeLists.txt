@@ -23,6 +23,7 @@ file(
         src/material/*.cpp
         src/light/*.cpp
         src/accelerator/*.cpp
+        src/material/bxdf/*.cpp
 )
 
 add_executable(Tracer ${SRCS})

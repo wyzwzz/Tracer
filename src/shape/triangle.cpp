@@ -6,6 +6,8 @@
 #include "utility/transform.hpp"
 #include "utility/mesh_load.hpp"
 #include "core/intersection.hpp"
+#include "core/sampling.hpp"
+#include "utility/logger.hpp"
 #include <vector>
 TRACER_BEGIN
 
@@ -50,23 +52,44 @@ TRACER_BEGIN
         }
 
         real surface_area() const noexcept {
-            return 0;
+            Point3f A = mesh->p[vertex[0]];
+            Point3f B = mesh->p[vertex[1]];
+            Point3f C = mesh->p[vertex[2]];
+            return 0.5 * cross(B-A,C-A).length();
         }
 
-        SurfacePoint sample(real* pdf,const Sample2& sample) const noexcept{
-            return {};
+        SurfacePoint sample(real* pdf,const Sample2& sam) const noexcept{
+            auto b = UniformSampleTriangle(sam);
+            const auto& A = mesh->p[vertex[0]];
+            const auto& B = mesh->p[vertex[1]];
+            const auto& C = mesh->p[vertex[2]];
+            const auto& uvA = mesh->uv[vertex[0]];
+            const auto& uvB = mesh->uv[vertex[1]];
+            const auto& uvC = mesh->uv[vertex[2]];
+            SurfacePoint sp;
+            sp.pos = b.x * A + b.y * B + (1 - b.x - b.y) * C;
+            sp.n = Normal3f(normalize(cross(B-A,C-A)));
+            sp.uv = b.x * uvA + b.y * uvB + (1 - b.x - b.y) * uvC;
+            *pdf = 1 / surface_area();
+            return sp;
         }
 
-        SurfacePoint sample(const SurfacePoint& ref,real* pdf,const Sample2& sample) const noexcept{
-            return {};
+        SurfacePoint sample(const SurfacePoint& ref,real* pdf,const Sample2& sam) const noexcept{
+            return sample(pdf,sam);
         }
 
         real pdf(const SurfacePoint& p) const noexcept{
+            NOT_IMPL
             return 0;
         }
 
         real pdf(const SurfacePoint&ref, const Vector3f& wi) const noexcept{
+            NOT_IMPL
             return 0;
+        }
+
+        real pdf(const Point3f& ref,const Point3f& pos) const noexcept override{
+                return 1 / surface_area();
         }
 
     private:
@@ -140,16 +163,16 @@ TRACER_BEGIN
         const Point2f uvB = mesh->uv[vertex[1]];
         const Point2f uvC = mesh->uv[vertex[2]];
 
-        const Vector3f nA = (Vector3f)mesh->n[vertex[0]];
-        const Vector3f nB = (Vector3f)mesh->n[vertex[1]];
-        const Vector3f nC = (Vector3f)mesh->n[vertex[2]];
+        const Vector3f nA = (Vector3f)mesh->n[vertex[0]].normalize();
+        const Vector3f nB = (Vector3f)mesh->n[vertex[1]].normalize();
+        const Vector3f nC = (Vector3f)mesh->n[vertex[2]].normalize();
         //todo
         isect->n = (Normal3f)normalize(cross(AB,AC));
         isect->uv = uvA + alpha * (uvB - uvA) + beta * (uvC - uvA);
         isect->wo = -ray.d;
 
         isect->pos = ray(t);
-        isect->map_n = Normal3f(nA + alpha * (nB - nA) + beta * (nC - nA));
+        isect->map_n = Normal3f(nA + alpha * (nB - nA) + beta * (nC - nA)).normalize();
 
         auto compute_ss_ts = [&](const Vector3f& AB,const Vector3f& AC,
                 const Vector2f& ab,const Vector2f& ac,const Vector3f& n,
@@ -159,12 +182,11 @@ TRACER_BEGIN
             const real det = m00 * m11 - m01 * m10;
             if(det){
                 const real inv_det = 1 / det;
-                ss  = normalize(m11 * inv_det * AB - m01 * inv_det * AC);
-                ts = cross(n,ss);//todo n x ss ?
+                ss  = m11 * inv_det * AB - m01 * inv_det * AC;
+                ts = m10 * inv_det * AB - m00 * inv_det * AC;
             }
             else{
-                Vector3f v2,v3;
-                coordinate(n,v2,v3);
+                coordinate(n,ss,ts);
             }
         };
         //compute dpdu dpdv
@@ -172,6 +194,9 @@ TRACER_BEGIN
 
         //compute dndu dndv
         compute_ss_ts(nB-nA,nC-nA,Vector2f(uvB-uvA),Vector2f(uvC-uvA),(Vector3f)isect->map_n,isect->dndu,isect->dndv);
+        if(isect->dndu.length_squared() < eps || isect->dndv.length_squared() < eps){
+            coordinate((Vector3f)isect->map_n,isect->dndu,isect->dndv);
+        }
 
 
         return true;
