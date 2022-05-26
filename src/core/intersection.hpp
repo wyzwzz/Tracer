@@ -32,8 +32,12 @@ TRACER_BEGIN
 
         Vector3f dpdu,dpdv;
         Vector3f dndu,dndv;
-        Normal3f map_n;
 
+        struct{
+            Vector3f dpdu,dpdv;
+            Vector3f dndu,dndv;
+            Normal3f n;
+        }shading;
     };
 
     struct SurfaceShadingPoint{

@@ -48,8 +48,9 @@ TRACER_BEGIN
             real diffuse_weight;
             if(diffuse_lum + specular_lum > eps)
                 diffuse_weight = diffuse_lum / (diffuse_lum + specular_lum);
-            else
+            else{
                 diffuse_weight = real(0.5);
+            }
 
 
 

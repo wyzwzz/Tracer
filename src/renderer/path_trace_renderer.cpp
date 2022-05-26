@@ -12,20 +12,22 @@
 #include "direct_illumination.hpp"
 TRACER_BEGIN
 class PathTraceRenderer:public PixelSamplerRenderer{
-    int max_depth = 10;
     int min_depth = 5;
+    int max_depth = 10;
     int direct_light_sample_num = 1;
 public:
     PathTraceRenderer(const PTRendererParams& params)
-    : PixelSamplerRenderer(params.worker_count,params.task_tile_size,params.spp)
+    : PixelSamplerRenderer(params.worker_count,params.task_tile_size,params.spp),
+    min_depth(params.min_depth),max_depth(params.max_depth),direct_light_sample_num(params.direct_light_sample_num)
     {}
 
     Spectrum eval_pixel_li(const Scene& scene,const Ray& r,Sampler& sampler,MemoryArena& arena) const override{
-        if(false){
+        if(0){
             SurfaceIntersection isect;
             if (scene.intersect_p(r, &isect)) {
                 auto color = isect.material->evaluate(isect.uv);
-                return color;
+                auto n = isect.shading.n;
+                return Spectrum(n.x + 1,n.y + 1,n.z + 1) * 0.5f;
             } else
                 return Spectrum(0.0, 0.0, 0.0);
         }
@@ -55,8 +57,7 @@ public:
                 else{
                     //sample from environment light
                     if(auto light = scene.environment_light.get()){
-                        //todo
-                        NOT_IMPL
+
                         L += coef * light->light_emit(isect.pos,isect.wo);
                     }
                 }
@@ -76,8 +77,8 @@ public:
                     //sample from all lights
                     for(auto light:scene.lights){
                         direct_illum += coef * sample_light(scene,light,isect,shading_p,sampler);
+                        direct_illum += coef * sample_bsdf(scene,isect,shading_p,sampler);
                     }
-                    direct_illum += coef * sample_bsdf(scene,isect,shading_p,sampler);
                 }
                 L += real(1) / direct_light_sample_num * direct_illum;
             }
@@ -101,7 +102,7 @@ public:
             }
             //todo handle refract?
 
-            const real abscos = abs_dot(isect.map_n,bsdf_sample.wi);
+            const real abscos = abs_dot(isect.shading.n,bsdf_sample.wi);
             coef *= bsdf_sample.f * abscos / bsdf_sample.pdf;
 
              ray = Ray(isect.eps_offset(bsdf_sample.wi),
@@ -110,17 +111,17 @@ public:
             //todo handle medium or bssdf ?
 
             //apply russian roulette
-//            Spectrum rr_coef = coef;
-//            if(depth > min_depth){
-//                auto q = std::max<real>(0.05,1 - rr_coef.max_component_value());
-//                if(sampler.sample1().u < q) break;
-//                coef /= q;
-//            }
+            Spectrum rr_coef = coef;
             if(depth > min_depth){
-                if(sampler.sample1().u > 0.9)
-                    break;
-                coef /= 0.9;
+                auto q = std::max<real>(0.05,1 - rr_coef.max_component_value());
+                if(sampler.sample1().u < q) break;
+                coef /= 1 - q;
             }
+//            if(depth > min_depth){
+//                if(sampler.sample1().u > 0.9)
+//                    break;
+//                coef /= 0.9;
+//            }
         }
         if(!L.is_finite()){
             LOG_CRITICAL("L get infinite");

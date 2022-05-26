@@ -172,7 +172,7 @@ TRACER_BEGIN
         isect->wo = -ray.d;
 
         isect->pos = ray(t);
-        isect->map_n = Normal3f(nA + alpha * (nB - nA) + beta * (nC - nA)).normalize();
+
 
         auto compute_ss_ts = [&](const Vector3f& AB,const Vector3f& AC,
                 const Vector2f& ab,const Vector2f& ac,const Vector3f& n,
@@ -193,11 +193,26 @@ TRACER_BEGIN
         compute_ss_ts(AB,AC,Vector2f(uvB - uvA),Vector2f(uvC-uvA),(Vector3f)isect->n,isect->dpdu,isect->dpdv);
 
         //compute dndu dndv
-        compute_ss_ts(nB-nA,nC-nA,Vector2f(uvB-uvA),Vector2f(uvC-uvA),(Vector3f)isect->map_n,isect->dndu,isect->dndv);
+        compute_ss_ts(nB-nA,nC-nA,Vector2f(uvB-uvA),Vector2f(uvC-uvA),(Vector3f)isect->n,isect->dndu,isect->dndv);
         if(isect->dndu.length_squared() < eps || isect->dndv.length_squared() < eps){
-            coordinate((Vector3f)isect->map_n,isect->dndu,isect->dndv);
+            coordinate((Vector3f)isect->n,isect->dndu,isect->dndv);
         }
 
+        auto ns = Normal3f(nA + alpha * (nB - nA) + beta * (nC - nA)).normalize();
+        auto ss = normalize(isect->dpdu);
+        auto ts = cross(ss,(Vector3f)ns);//todo ???
+        if(ts.length_squared() > 0){
+            ts = normalize(ts);
+            ss = cross(ts,(Vector3f)ns);
+        }
+        else
+            coordinate((Vector3f)ns,ss,ts);
+
+        compute_ss_ts(nB-nA,nC-nA,Vector2f(uvB-uvA),Vector2f(uvC-uvA),(Vector3f)ns,isect->shading.dndu,isect->shading.dndv);
+
+        isect->shading.dpdu = ss;
+        isect->shading.dpdv = ts;
+        isect->shading.n = (Normal3f)normalize(cross(ss,ts));
 
         return true;
     }

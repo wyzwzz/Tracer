@@ -22,7 +22,7 @@ TRACER_BEGIN
     public:
 
         AggregateBSDF(const SurfaceIntersection& isect)
-        :ng(normalize(isect.n)),ns(normalize(isect.map_n)),ss(normalize(isect.dndu)),ts(normalize(isect.dndv))
+        :ng(normalize(isect.n)),ns(normalize(isect.shading.n)),ss(normalize(isect.shading.dpdu)),ts(normalize(isect.shading.dpdv))
         {
 
         }
@@ -61,7 +61,7 @@ TRACER_BEGIN
             auto wo = normalize(_wo);
             const Vector3f lwo = Vector3f(dot(ss,wo),
                                           dot(ts,wo),
-                                          dot(wo,ns));
+                                          dot(ns,wo));
             real weight_sum = 0;
             for(int i = 0; i < bxdfs_count; ++i){
                 weight_sum += weights[i];
@@ -99,11 +99,14 @@ TRACER_BEGIN
 
             Vector3f wi = ss * bxdf_sam_ret.lwi.x + ts * bxdf_sam_ret.lwi.y
                     + (Vector3f)ns * bxdf_sam_ret.lwi.z;
+            wi = normalize(wi);
+//            real dem = abs_dot(wi,ng);
+//            real factor = dem < eps ? 1 : abs_dot(wi,ns) / dem;
             BSDFSampleResult ret;
-            ret.wi = normalize(wi);
+            ret.wi = wi;
             ret.pdf = bxdf_sam_ret.pdf;
             ret.is_delta = false;
-            ret.f = bxdf_sam_ret.f;
+            ret.f = bxdf_sam_ret.f;// * factor;
             return ret;
         }
 

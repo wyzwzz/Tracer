@@ -4,7 +4,7 @@
 
 #ifndef TRACER_GEOMETRY_HPP
 #define TRACER_GEOMETRY_HPP
-
+#include <algorithm>
 #include "common.hpp"
 #include "hash.hpp"
 namespace tracer {
@@ -891,6 +891,18 @@ namespace tracer {
     template <typename T>
     inline T abs_dot(const Normal3<T> &n1, const Normal3<T> &n2) {
         return std::abs(n1.x * n2.x + n1.y * n2.y + n1.z * n2.z);
+    }
+
+
+    inline real local_phi(const Vector3f& w) noexcept{
+        if(!w.y && !w.x)
+            return 0;
+        real ret = std::atan2(w.y,w.x);
+        return ret < 0 ? (ret + 2 * PI_r) : ret;
+    }
+
+    inline real local_theta(const Vector3f& w) noexcept{
+        return std::acos(std::clamp<real>(w.z,-1,1));
     }
 }
 

@@ -32,7 +32,8 @@ TRACER_BEGIN
             return {};
         const Vector3f ideal_lwi = reflect(lwo,Vector3f(0,0,1));
         const real cos_val = dot(ideal_lwi,lwi)/(lwi.length() * ideal_lwi.length());
-
+        if(cos_val <= 0)
+            return{};
         auto ret = specular * PowCosineSampleHemispherePdf(ns,cos_val);
 //        LOG_INFO("evaluate from specular: {} {} {}",ret.r,ret.g,ret.b);
         return ret;
@@ -55,17 +56,18 @@ TRACER_BEGIN
             return {};
         const Vector3f ideal_lwi = normalize(reflect(lwo,{0,0,1}));
         Vector3f local_lwi = PowCosineSampleHemisphere(ns,sample);
-        local_lwi = Vector3f(0,0,1);
         Vector3f x,y;
         coordinate(ideal_lwi,x,y);
         Vector3f lwi = local_lwi.z * ideal_lwi + local_lwi.x * x + local_lwi.y * y;
         if(lwi.z <= 0)
             return {};
+
         const real pdf = PowCosineSampleHemispherePdf(ns,local_lwi.z);//note!!!
         BXDFSampleResult ret;
         ret.f = evaluate(lwi,lwo);
         ret.lwi = lwi;
         ret.pdf = pdf;
+//        LOG_INFO("sample specular pdf: {}, f: {} {} {}, specular: {} {} {}",pdf,ret.f.r,ret.f.g,ret.f.b,specular.r,specular.g,specular.b);
         return ret;
     }
 

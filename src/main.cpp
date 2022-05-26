@@ -16,11 +16,11 @@
 #include <stdexcept>
 using namespace tracer;
 int main(int argc,char** argv){
-    auto filter = create_gaussin_filter(0.495,0.6);
-    int image_w = 1920;
-    int image_h = 1080;
+    auto filter = create_gaussin_filter(0.5,0.6);
+    int image_w = 480;
+    int image_h = 270;
 
-    PTRendererParams params{18,32,1024};
+    PTRendererParams params{18,32,512,8,16,4};
     auto renderer = create_pt_renderer(params);
     auto camera = create_thin_lens_camera((real)image_w/image_h,
                                           {0,12.72,31.85},
@@ -90,9 +90,9 @@ int main(int argc,char** argv){
     scene->lights = area_lights;
     scene->set_camera(camera);
     try{
-        AutoTimer timer("render");
+        AutoTimer timer("render","s");
         auto render_target = renderer->render(*scene.get(), Film({image_w, image_h}, filter));
-        write_image_to_hdr(render_target.color, "tracer_test_diningroom_1024.hdr");
+        write_image_to_hdr(render_target.color, "tracer_test_diningroom.hdr");
         LOG_INFO("write hdr...");
         auto& imgf = render_target.color;
         Image2D<Color3b> imgu8(imgf.width(),imgf.height());
@@ -104,7 +104,7 @@ int main(int argc,char** argv){
                 imgu8.at(i,j).z = std::clamp<int>(std::pow(imgf.at(i,j).b,inv_gamma) * 255,0,255);
             }
         }
-        write_image_to_png(imgu8,"tracer_test_diningroom_1024.png");
+        write_image_to_png(imgu8,"tracer_test_diningroom.png");
         LOG_INFO("write png...");
     }
     catch(const std::exception& e){

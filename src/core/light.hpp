@@ -59,6 +59,9 @@ public:
     };
 
     class EnvironmentLight:public Light{
+    protected:
+        Point3f world_center;
+        real world_radius;
     public:
         const EnvironmentLight* as_environment_light() const noexcept override final{return this;}
 
