@@ -8,6 +8,7 @@
 #include "core/spectrum.hpp"
 #include "core/intersection.hpp"
 #include <algorithm>
+#include "utility/logger.hpp"
 TRACER_BEGIN
 
 class Texture2D{

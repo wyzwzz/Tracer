@@ -102,6 +102,7 @@ namespace tracer{
 
     Transform scale(real x,real y,real z);
 
+    //rad
     Transform rotate_x(real theta);
 
     Transform rotate_y(real theta);

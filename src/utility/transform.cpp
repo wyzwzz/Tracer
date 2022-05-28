@@ -124,4 +124,27 @@ namespace tracer{
     }
 
 
+    Transform rotate_x(real theta) {
+        real sinTheta = std::sin(theta);
+        real cosTheta = std::cos(theta);
+        Matrix4x4 m(1, 0, 0, 0, 0, cosTheta, -sinTheta, 0, 0, sinTheta, cosTheta, 0,
+                    0, 0, 0, 1);
+        return Transform(m, transpose(m));
+    }
+
+    Transform rotate_y(real theta){
+        real sinTheta = std::sin(theta);
+        real cosTheta = std::cos(theta);
+        Matrix4x4 m(cosTheta, 0, sinTheta, 0, 0, 1, 0, 0, -sinTheta, 0, cosTheta, 0,
+                    0, 0, 0, 1);
+        return Transform(m, transpose(m));
+    }
+
+    Transform rotate_z(real theta){
+        real sinTheta = std::sin(theta);
+        real cosTheta = std::cos(theta);
+        Matrix4x4 m(cosTheta, -sinTheta, 0, 0, sinTheta, cosTheta, 0, 0, 0, 0, 1, 0,
+                    0, 0, 0, 1);
+        return Transform(m, transpose(m));
+    }
 }

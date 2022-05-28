@@ -7,7 +7,19 @@
 TRACER_BEGIN
 
     std::string extract_name_from_path(const std::string& path){
-         return path.empty() ? path : path.substr(std::min(path.find_last_of('\\'),path.find_last_of('/')));
+        int p = -1;
+        for(int i = path.length() - 1; i >= 0; i--){
+            if(path[i] == '\\' || path[i] == '/'){
+                p = i;
+                break;
+            }
+        }
+        if(p == -1){
+            return path;
+        }
+        else{
+            return path.substr(p);
+        }
     }
 
     model_t load_model_from_file(const std::string& path){

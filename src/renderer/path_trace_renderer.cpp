@@ -26,6 +26,7 @@ public:
             SurfaceIntersection isect;
             if (scene.intersect_p(r, &isect)) {
                 auto color = isect.material->evaluate(isect.uv);
+                return color;
                 auto n = isect.shading.n;
                 return Spectrum(n.x + 1,n.y + 1,n.z + 1) * 0.5f;
             } else
@@ -58,7 +59,7 @@ public:
                     //sample from environment light
                     if(auto light = scene.environment_light.get()){
 
-                        L += coef * light->light_emit(isect.pos,isect.wo);
+                        L += coef * light->light_emit(ray.o,ray.d);
                     }
                 }
             }
@@ -77,8 +78,9 @@ public:
                     //sample from all lights
                     for(auto light:scene.lights){
                         direct_illum += coef * sample_light(scene,light,isect,shading_p,sampler);
-                        direct_illum += coef * sample_bsdf(scene,isect,shading_p,sampler);
+
                     }
+                    direct_illum += coef * sample_bsdf(scene,isect,shading_p,sampler);
                 }
                 L += real(1) / direct_light_sample_num * direct_illum;
             }
@@ -125,8 +127,10 @@ public:
         }
         if(!L.is_finite()){
             LOG_CRITICAL("L get infinite");
+            return {};
         }
-        return L;
+        else
+            return L;
     }
 
 };

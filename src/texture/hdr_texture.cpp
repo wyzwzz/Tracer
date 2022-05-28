@@ -3,13 +3,17 @@
 //
 #include "core/texture.hpp"
 #include "utility/image.hpp"
-
+#include "utility/sampler.hpp"
 TRACER_BEGIN
 
     class HDRTexture2D: public Texture2D{
     public:
-        HDRTexture2D(const RC<Image2D<Color3f>>& image)
-        {}
+        HDRTexture2D(const RC<Image2D<Color3f>>& image,real gamma = 1)
+        :data(image)
+        {
+            this->inv_gamma = 1.0 / gamma;
+        }
+
         ~HDRTexture2D() override {}
 
         int width() const noexcept {
@@ -21,7 +25,8 @@ TRACER_BEGIN
         }
 
         Spectrum evaluate_impl(const Point2f& uv) const noexcept override{
-            return {};
+            auto v = LinearSampler::Sample2D(*data.get(),uv.x,uv.y);
+            return Spectrum(v.x,v.y,v.z);
         }
 
     private:

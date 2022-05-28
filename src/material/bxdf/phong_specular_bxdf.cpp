@@ -56,6 +56,7 @@ TRACER_BEGIN
             return {};
         const Vector3f ideal_lwi = normalize(reflect(lwo,{0,0,1}));
         Vector3f local_lwi = PowCosineSampleHemisphere(ns,sample);
+//        local_lwi = Vector3f(0,0,1);
         Vector3f x,y;
         coordinate(ideal_lwi,x,y);
         Vector3f lwi = local_lwi.z * ideal_lwi + local_lwi.x * x + local_lwi.y * y;

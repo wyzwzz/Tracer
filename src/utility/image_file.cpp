@@ -57,7 +57,7 @@ TRACER_BEGIN
     }
 
     RC<Image2D<Color3f>> load_hdr_from_file(const std::string& filename){
-        stbi_set_flip_vertically_on_load(true);
+        stbi_set_flip_vertically_on_load(false);
         int w,h,nComp;
         auto d = stbi_loadf(filename.c_str(),&w,&h,&nComp,0);
         if(!d){
@@ -104,9 +104,20 @@ TRACER_BEGIN
             return create_constant_texture2d(constant);
         }
         else{
+            if(!scale_r && !scale_g && !scale_b){
+                scale_r = scale_g = scale_b = 1;
+            }
             LOG_INFO("load texture from file: {}, scale: {} {} {}",name,scale_r,scale_g,scale_b);
             if(!is_float_image(name)){
                 auto image = load_image_from_file(name);
+                image->map([](const Color3b& c){
+                   Color3f t{(real)c.x/255,(real)c.y/255,(real)c.z/255};
+                   real gamma =  2.2;
+                   t.x = std::pow(t.x,gamma);
+                   t.y = std::pow(t.y,gamma);
+                   t.z = std::pow(t.z,gamma);
+                   return Color3b(t.x*255,t.y*255,t.z*255);
+                });
                 image->operator*=( Color3f(scale_r,scale_g,scale_b));
                 return create_image_texture2d(image);
             }
@@ -144,5 +155,16 @@ TRACER_BEGIN
         return textures;
     }
 
+    RC<const Texture2D> create_texture2d_from_file(const std::string& filename){
+
+        if(!is_float_image(filename)){
+            auto img = load_image_from_file(filename);
+            return create_image_texture2d(img);
+        }
+        else{
+            auto img = load_hdr_from_file(filename);
+            return create_hdr_texture2d(img);
+        }
+    }
 
 TRACER_END

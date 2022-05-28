@@ -8,6 +8,7 @@
 #include "core/bsdf.hpp"
 #include "core/intersection.hpp"
 #include "material/bxdf/bxdf.hpp"
+#include "utility/logger.hpp"
 TRACER_BEGIN
 
     template<int MAX_BXDF_COUNT>

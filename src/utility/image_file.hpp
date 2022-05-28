@@ -18,6 +18,8 @@ RC<Image2D<Color3b>> load_image_from_file(const std::string& filename);
 
 RC<Image2D<Color3f>> load_hdr_from_file(const std::string& filename);
 
+RC<const Texture2D> create_texture2d_from_file(const std::string& filename);
+
 struct MaterialTexture{
     RC<Texture2D> map_ka;
     RC<Texture2D> map_kd;

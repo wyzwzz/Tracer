@@ -739,7 +739,7 @@ namespace tracer {
         }
         void bounding_sphere(Point3<T> *center, real *radius) const {
             *center = (low + high) / 2;
-            *radius = Inside(*center, *this) ? Distance(*center, high) : 0;
+            *radius = inside(*center, *this) ? distance(*center, high) : 0;
         }
         template <typename U>
         explicit operator Bounds3<U>() const {
@@ -903,6 +903,38 @@ namespace tracer {
 
     inline real local_theta(const Vector3f& w) noexcept{
         return std::acos(std::clamp<real>(w.z,-1,1));
+    }
+
+    inline real spherical_theta(const Vector3f &v) {
+        return std::acos(std::clamp<real>(v.z, -1, 1));
+    }
+
+    inline real spherical_phi(const Vector3f &v) {
+        real p = std::atan2(v.y, v.x);
+        return (p < 0) ? (p + 2 * PI_r) : p;
+    }
+
+    template <typename T>
+    bool inside(const Point3<T> &p, const Bounds3<T> &b) {
+        return (p.x >= b.low.x && p.x <= b.high.x && p.y >= b.low.y &&
+                p.y <= b.high.y && p.z >= b.low.z && p.z <= b.high.z);
+    }
+
+    template <typename T, typename U>
+    inline real distance_squared(const Point3<T> &p, const Bounds3<U> &b) {
+        real dx = std::max<real>({0, b.low.x - p.x, p.x - b.high.x});
+        real dy = std::max<real>({0, b.low.y - p.y, p.y - b.high.y});
+        real dz = std::max<real>({0, b.low.z - p.z, p.z - b.high.z});
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    template <typename T, typename U>
+    inline real distance(const Point3<T> &p, const Bounds3<U> &b) {
+        return std::sqrt(distance_squared(p, b));
+    }
+    template <typename T>
+    inline real distance(const Point3<T> &p1, const Point3<T> &p2) {
+        return (p1 - p2).length();
     }
 }
 

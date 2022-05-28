@@ -5,7 +5,7 @@
 #ifndef TRACER_LIGHT_HPP
 #define TRACER_LIGHT_HPP
 #include "core/spectrum.hpp"
-
+#include "utility/transform.hpp"
 TRACER_BEGIN
 struct SurfacePoint;
 class AreaLight;
@@ -43,6 +43,8 @@ public:
     virtual LightSampleResult sample_li(const SurfacePoint& ref,const Sample5&) const = 0;
 
     virtual LightEmitResult sample_le(const Sample5&) const = 0;
+protected:
+    Transform world_to_light;
 };
 
     class AreaLight:public Light{
@@ -61,7 +63,7 @@ public:
     class EnvironmentLight:public Light{
     protected:
         Point3f world_center;
-        real world_radius;
+        real world_radius = 1.f;
     public:
         const EnvironmentLight* as_environment_light() const noexcept override final{return this;}
 
@@ -70,6 +72,9 @@ public:
         virtual real pdf(const Point3f& ref,
                          const Vector3f& ref_to_light) const noexcept = 0;
 
+        void preprocess(const Bounds3f& world_bound) noexcept{
+            world_bound.bounding_sphere(&world_center,&world_radius);
+        }
     };
 
 TRACER_END

@@ -15,7 +15,7 @@ TRACER_BEGIN
         if(light->as_area_light())
             return sample_area_light(scene,light->as_area_light(),isect,shd_p,sampler);
         else if(light->as_environment_light())
-            sample_environment_light(scene,light->as_environment_light(),isect,shd_p,sampler);
+            return sample_environment_light(scene,light->as_environment_light(),isect,shd_p,sampler);
         else
             return {};
     }
@@ -125,6 +125,8 @@ TRACER_BEGIN
                     envir_illum = f * weight / bsdf_sample_ret.pdf;
                 }
             }
+//            LOG_INFO("envir_illum : {} {} {}",envir_illum.r,envir_illum.g,envir_illum.b);
+//            LOG_INFO("envir illum bsdf pdf: {}",bsdf_sample_ret.pdf);
             return envir_illum;
         }
 

@@ -4,6 +4,7 @@
 #include "core/scene.hpp"
 #include "factory/scene.hpp"
 #include "core/aggregate.hpp"
+#include "core/light.hpp"
 TRACER_BEGIN
 
     class GeneralScene:public Scene{
@@ -36,6 +37,12 @@ TRACER_BEGIN
 
         bool intersect_p(const Ray& ray,SurfaceIntersection* isect) const override{
             return accel->intersect_p(ray,isect);
+        }
+
+        void prepare_to_render() override{
+            if(environment_light){
+                environment_light->preprocess(accel->world_bound());
+            }
         }
     };
 

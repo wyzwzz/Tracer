@@ -20,9 +20,11 @@ public:
 
     virtual bool intersect_p(const Ray& ray,SurfaceIntersection* isect) const = 0;
 
+    virtual void prepare_to_render() = 0;
+
     Span<const Light*> lights;
 
-    RC<const EnvironmentLight> environment_light;
+    RC<EnvironmentLight> environment_light;
 
 };
 

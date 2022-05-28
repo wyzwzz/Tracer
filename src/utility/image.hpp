@@ -43,6 +43,13 @@ TRACER_BEGIN
             return *this;
         }
 
+        template<typename F>
+        void map(F&& f){
+            for(int i = 0; i < w * h; ++i){
+                data[i] = f(data[i]);
+            }
+        }
+
         T& operator()(int x,int y) const{
             return at(x,y);
         }

@@ -28,7 +28,7 @@ file(
 
 add_executable(Tracer ${SRCS})
 
-target_compile_features(Tracer PRIVATE cxx_std_17)
+target_compile_features(Tracer PRIVATE cxx_std_20)
 
 target_include_directories(
         Tracer

@@ -10,34 +10,44 @@
 #include "factory/accelerator.hpp"
 #include "factory/primivite.hpp"
 #include "factory/material.hpp"
+#include "factory/light.hpp"
 #include "utility/image_file.hpp"
 #include "utility/logger.hpp"
 #include "utility/timer.hpp"
 #include <stdexcept>
+#include <array>
 using namespace tracer;
-int main(int argc,char** argv){
-    auto filter = create_gaussin_filter(0.5,0.6);
-    int image_w = 480;
-    int image_h = 270;
+struct RenderParams{
+    std::string render_result_name;
+    struct{
+        real radius;
+        real alpha;
+    }filter;
+    int render_target_width;
+    int render_target_height;
+    struct{
+        std::array<real,3> pos;
+        std::array<real,3> target;
+        std::array<real,3> up;
+        real fov;
+        real lens_radius;
+        real focal_dist;
+    }camera;
+    std::string obj_file_name;
+    std::string ibl_file_name;
 
-    PTRendererParams params{18,32,512,8,16,4};
-    auto renderer = create_pt_renderer(params);
-    auto camera = create_thin_lens_camera((real)image_w/image_h,
-                                          {0,12.72,31.85},
-                                          {0,12.546,30.865},
-                                          {0,0.985,-0.174},
-                                          PI_r*45.0/180.0,
-                                          0.0,10);
+};
+PTRendererParams pt_params{18,16,512,3,10,1};
 
-//    auto camera = create_thin_lens_camera((real)image_w/image_h,
-//                                          {0,0,2.5},
-//                                          {0,0,0},
-//                                          {0,1,0},
-//                                          PI_r*60.0/180.0,
-//                                          0.0,10);
-
-    auto model = load_model_from_file("C:/Users/wyz/projects/RayTracer/data/CG2020-master/diningroom/diningroom.obj");
-//    auto model = load_model_from_file("C:/Users/wyz/projects/RayTracer/data/CG2020-master/cornellbox/cornellbox.obj");
+void run(const RenderParams& params){
+    auto filter = create_gaussin_filter(params.filter.radius,params.filter.alpha);
+    auto camera = create_thin_lens_camera((real)params.render_target_width/params.render_target_height,
+                                          {params.camera.pos[0],params.camera.pos[1],params.camera.pos[2]},
+                                          {params.camera.target[0],params.camera.target[1],params.camera.target[2]},
+                                          {params.camera.up[0],params.camera.up[1],params.camera.up[2]},
+                                          params.camera.fov,
+                                          params.camera.lens_radius,params.camera.fov);
+    auto model = load_model_from_file(params.obj_file_name);
     std::vector<RC<Primitive>> primitives;
     LOG_INFO("load model's mesh count: {}",model.mesh.size());
     LOG_INFO("load model's material count: {}",model.material.size());
@@ -54,7 +64,6 @@ int main(int argc,char** argv){
                 material.map_ns));
     }
     LOG_INFO("load material texture count: {}",materials_res.size());
-
     for(const auto& mesh:model.mesh){
         assert(mesh.indices.size() % 3 == 0);
         const auto triangle_count = mesh.indices.size() / 3;
@@ -67,10 +76,6 @@ int main(int argc,char** argv){
             assert(mesh.materials[i] < materials.size());
             const auto& material = materials[mesh.materials[i]];
             const auto& m_res = materials_res[mesh.materials[i]];
-//            primitives.emplace_back(create_geometric_primitive(triangles[i],material,mi,
-//                                                               m_res.has_emission ?
-//                                                               m_res.map_ke->evaluate(Point2f()) :
-//                                                               Spectrum()));
             if(materials_res[mesh.materials[i]].has_emission){
                 primitives.emplace_back(create_geometric_primitive(triangles[i],material,mi,m_res.map_ke->evaluate(Point2f())));
                 area_lights.emplace_back(primitives.back()->as_area_light());
@@ -89,23 +94,82 @@ int main(int argc,char** argv){
     auto scene = create_general_scene(bvh);
     scene->lights = area_lights;
     scene->set_camera(camera);
-    try{
-        AutoTimer timer("render","s");
-        auto render_target = renderer->render(*scene.get(), Film({image_w, image_h}, filter));
-        write_image_to_hdr(render_target.color, "tracer_test_diningroom.hdr");
-        LOG_INFO("write hdr...");
-        auto& imgf = render_target.color;
-        Image2D<Color3b> imgu8(imgf.width(),imgf.height());
-        real inv_gamma = 1.0 / 2.2;
-        for(int i = 0; i < imgf.width(); i++){
-            for(int j = 0; j < imgf.height(); j++){
-                imgu8.at(i,j).x = std::clamp<int>(std::pow(imgf.at(i,j).r,inv_gamma) * 255,0,255);
-                imgu8.at(i,j).y = std::clamp<int>(std::pow(imgf.at(i,j).g,inv_gamma) * 255,0,255);
-                imgu8.at(i,j).z = std::clamp<int>(std::pow(imgf.at(i,j).b,inv_gamma) * 255,0,255);
-            }
+    if(!params.ibl_file_name.empty()){
+        auto env_map = create_texture2d_from_file("C:/Users/wyz/projects/RayTracer/data/CG2020-master/car/environment_day.hdr");
+        auto ibl = create_ibl_light(env_map, rotate_x(PIOver2_r));
+        scene->environment_light = ibl;
+        scene->lights.push_back(ibl.get());
+    }
+    scene->prepare_to_render();
+    auto renderer = create_pt_renderer(pt_params);
+    AutoTimer timer("render","s");
+    auto render_target = renderer->render(*scene.get(), Film({params.render_target_width, params.render_target_height}, filter));
+    write_image_to_hdr(render_target.color, params.render_result_name+"hdr");
+    LOG_INFO("write hdr...");
+    auto& imgf = render_target.color;
+    Image2D<Color3b> imgu8(imgf.width(),imgf.height());
+    real inv_gamma = 1.0 / 2.2;
+    for(int i = 0; i < imgf.width(); i++){
+        for(int j = 0; j < imgf.height(); j++){
+            imgu8.at(i,j).x = std::clamp<int>(std::pow(imgf.at(i,j).r,inv_gamma) * 255,0,255);
+            imgu8.at(i,j).y = std::clamp<int>(std::pow(imgf.at(i,j).g,inv_gamma) * 255,0,255);
+            imgu8.at(i,j).z = std::clamp<int>(std::pow(imgf.at(i,j).b,inv_gamma) * 255,0,255);
         }
-        write_image_to_png(imgu8,"tracer_test_diningroom.png");
-        LOG_INFO("write png...");
+    }
+    write_image_to_png(imgu8,params.render_result_name+".png");
+    LOG_INFO("write png...");
+    LOG_INFO("finish task");
+}
+int main(int argc,char** argv){
+    RenderParams bedroom = {
+        .render_result_name = "tracer_bedroom",
+        .filter = {.radius = 0.5,.alpha = 0.6},
+        .render_target_width = 1280,
+        .render_target_height = 720,
+        .camera = {
+                .pos = {3.456,1.212,3.299},
+                .target = {2.699,1.195,2.645},
+                .up = {-0.013,1.000,-0.011},
+                .fov = PI_r * 39.4305 / 180.0,
+                .lens_radius = 0,
+                .focal_dist = 10.0
+        },
+        .obj_file_name = "bedroom.obj",
+    };
+
+    RenderParams cornell_box = {
+        .render_result_name = "tracer_cornel-box",
+        .filter = {.radius = 0.5,.alpha = 0.6},
+        .render_target_width = 1024,
+        .render_target_height = 1024,
+        .camera = {
+                .pos = {0,1,6.8},
+                .target = {0,1,5.8},
+                .up = {0,1,0},
+                .fov = PI_r * 19.5 / 180.0,
+                .lens_radius = 0,
+                .focal_dist = 10.0
+        },
+        .obj_file_name = "cornell-box.obj"
+    };
+
+    RenderParams veach_mis = {
+        .render_result_name = "tracer_veach-mis",
+        .filter = {.radius = 0.5,.alpha = 0.6},
+        .render_target_width = 1200,
+        .render_target_height = 900,
+        .camera = {
+                .pos = {0.0,2.0,15.0},
+                .target = {0.0,1.69521,14.0476},
+                .up = {0.0,0.952421,-0.304787},
+                .fov = PI_r * 27.3909 / 180.0,
+                .lens_radius = 0,
+                .focal_dist = 10.0
+        },
+        .obj_file_name = "veach-mis.obj"
+    };
+    try{
+        run(cornell_box);
     }
     catch(const std::exception& e){
         LOG_CRITICAL("exception: {}",e.what());
