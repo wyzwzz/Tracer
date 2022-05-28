@@ -13,6 +13,31 @@ inline Vector3f reflect(const Vector3f& w,const Vector3f n) noexcept{
     return 2 * dot(w,n) * n - w;
 }
 
+    inline real dielectric_fresnel(
+            real eta_i, real eta_o, real cos_theta_i) noexcept
+    {
+        if(cos_theta_i < 0)
+        {
+            std::swap(eta_i, eta_o);
+            cos_theta_i = -cos_theta_i;
+        }
+
+        const real sin_theta_i = std::sqrt((std::max)(
+                real(0), 1 - cos_theta_i * cos_theta_i));
+        const real sin_theta_t = eta_o / eta_i * sin_theta_i;
+
+        if(sin_theta_t >= 1)
+            return 1;
+
+        const real cos_theta_t = std::sqrt((std::max)(
+                real(0), 1 - sin_theta_t * sin_theta_t));
+        const real para = (eta_i * cos_theta_i - eta_o * cos_theta_t)
+                          / (eta_i * cos_theta_i + eta_o * cos_theta_t);
+        const real perp = (eta_o * cos_theta_i - eta_i * cos_theta_t)
+                          / (eta_o * cos_theta_i + eta_i * cos_theta_t);
+
+        return real(0.5) * (para * para + perp * perp);
+    }
 
 TRACER_END
 

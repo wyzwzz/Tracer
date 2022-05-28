@@ -57,11 +57,20 @@ void run(const RenderParams& params){
     for(auto& m:model.material){
         auto material = create_texture_from_file(m);
         materials_res.emplace_back(material);
-        materials.emplace_back(create_phong_material(
-                material.map_ka,
-                material.map_kd,
-                material.map_ks,
-                material.map_ns));
+        if(material.as_glass){
+            materials.emplace_back(create_glass(
+                    material.map_ks,
+                    material.map_kt,
+                    material.ior
+                    ));
+        }
+        else{
+            materials.emplace_back(create_phong_material(
+                    material.map_ka,
+                    material.map_kd,
+                    material.map_ks,
+                    material.map_ns));
+        }
     }
     LOG_INFO("load material texture count: {}",materials_res.size());
     for(const auto& mesh:model.mesh){
@@ -104,7 +113,7 @@ void run(const RenderParams& params){
     auto renderer = create_pt_renderer(pt_params);
     AutoTimer timer("render","s");
     auto render_target = renderer->render(*scene.get(), Film({params.render_target_width, params.render_target_height}, filter));
-    write_image_to_hdr(render_target.color, params.render_result_name+"hdr");
+    write_image_to_hdr(render_target.color, params.render_result_name+".hdr");
     LOG_INFO("write hdr...");
     auto& imgf = render_target.color;
     Image2D<Color3b> imgu8(imgf.width(),imgf.height());
@@ -169,7 +178,7 @@ int main(int argc,char** argv){
         .obj_file_name = "veach-mis.obj"
     };
     try{
-        run(cornell_box);
+        run(bedroom);
     }
     catch(const std::exception& e){
         LOG_CRITICAL("exception: {}",e.what());

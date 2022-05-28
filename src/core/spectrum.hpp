@@ -114,7 +114,10 @@ TRACER_BEGIN
         return Color3<T>(lhs.r/rhs,lhs.g/rhs,lhs.b/rhs);
     }
 
-
+    template<typename T>
+    Color3<T> sqrt(const Color3<T>& c){
+        return Color3<T>(std::sqrt(c.r),std::sqrt(c.g),std::sqrt(c.b));
+    }
 
 
     using Spectrum = Color3<real>;

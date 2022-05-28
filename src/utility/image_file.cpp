@@ -150,6 +150,16 @@ TRACER_BEGIN
         if(material.emission[0] > 0 || material.emission[1] > 0 || material.emission[2] > 0){
             textures.has_emission = true;
         }
+        if(material.ior > 1 ){
+            LOG_INFO("find transparent material with ior: {}",material.ior);
+            if(textures.map_ks->evaluate_s({0.5,0.5}) == 0){
+                textures.map_ks = _create_texture_from_file("",one);
+            }
+            textures.map_kt = textures.map_ks;
+            textures.as_glass = true;
+            textures.ior = _create_texture_from_file("",material.ior);
+        }
+
 
 
         return textures;

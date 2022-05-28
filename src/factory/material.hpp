@@ -10,6 +10,12 @@
 #include "core/texture.hpp"
 TRACER_BEGIN
 
+RC<Material> create_glass(
+        RC<const Texture2D> map_kr,
+        RC<const Texture2D> map_kt,
+        RC<const Texture2D> map_ior
+        );
+
 RC<Material> create_phong_material(
         RC<const Texture2D> map_ka,
         RC<const Texture2D> map_kd,

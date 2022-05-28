@@ -24,6 +24,8 @@ struct MaterialTexture{
     RC<Texture2D> map_ka;
     RC<Texture2D> map_kd;
     RC<Texture2D> map_ks;
+    RC<Texture2D> map_kt;
+    RC<Texture2D> ior;
     RC<Texture2D> map_ns;
     RC<Texture2D> map_bump;
     RC<Texture2D> disp;
@@ -37,6 +39,7 @@ struct MaterialTexture{
     RC<Texture2D> map_ke;
     RC<Texture2D> norm;
     bool has_emission = false;
+    bool as_glass = false;
 };
 struct material_t;
 MaterialTexture create_texture_from_file(const material_t& material);
