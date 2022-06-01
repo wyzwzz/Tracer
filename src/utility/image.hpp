@@ -18,6 +18,7 @@ TRACER_BEGIN
         {
             if(d){
                 std::copy(d,d+w*h,data.get());
+//                memcpy(data.get(),d,w*h*sizeof(T));
             }
             else{
                 memset(data.get(),0,sizeof(T)*width*height);
@@ -79,6 +80,60 @@ TRACER_BEGIN
         int w,h;
     };
 
+    template<typename T>
+    class MipMap2D{
+    public:
+        MipMap2D(){}
+        explicit MipMap2D(const Image2D<T>& lod0_image){
+            generate(lod0_image);
+        }
+        void generate(const Image2D<T>& lod0_image);
+
+        int levels() const{
+            return images.size();
+        }
+        bool valid() const{
+            return levels() > 0;
+        }
+        const Image2D<T>& get_level(int level) const{
+            assert(level >=0 && level <levels());
+            return images[level];
+        }
+    private:
+        std::vector<Image2D<T>> images;
+    };
+
+    template<typename T>
+    void MipMap2D<T>::generate(const Image2D<T> &lod0_image) {
+        this->images.clear();
+        int last_w = lod0_image.width();
+        int last_h = lod0_image.height();
+        images.emplace_back(lod0_image);
+        while(last_w > 1 && last_h > 1){
+            if((last_w & 1) || (last_h & 1)){
+                this->images.clear();
+                throw std::runtime_error("invalid input image size: must be power of 2");
+            }
+            const int cur_w = last_w >> 1;
+            const int cur_h = last_h >> 1;
+            Image2D<T> cur_lod_image(cur_w,cur_h);
+            auto& last_lod_image = images.back();
+            for(int y = 0; y < cur_h; ++y){
+                const int ly = y << 1;
+                for(int x = 0; x < cur_w; ++x){
+                    const int lx = x << 1;
+                    const auto t00 = last_lod_image.at(lx,ly);
+                    const auto t01 = last_lod_image.at(lx+1,ly);
+                    const auto t10 = last_lod_image.at(lx,ly+1);
+                    const auto t11 = last_lod_image.at(lx+1,ly+1);
+                    cur_lod_image.at(x,y) = (t00 + t01 + t10 + t11) * 0.25;
+                }
+            }
+            images.emplace_back(std::move(cur_lod_image));
+            last_w >>= 1;
+            last_h >>= 1;
+        }
+    }
 
     template<typename T>
     class Image3D{

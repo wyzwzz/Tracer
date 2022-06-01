@@ -35,6 +35,9 @@ public:
     virtual real pdf(const Vector3f& wi, const Vector3f& wo) const = 0;
 
     virtual bool is_delta() const = 0;
+
+    //used for photo mapping
+    virtual bool has_diffuse() const = 0;
 };
 
 

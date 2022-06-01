@@ -37,4 +37,8 @@ TRACER_BEGIN
         return CosineHemispherePdf(lwi.z);
     }
 
+    bool DiffuseBXDF::has_diffuse() const {
+        return true;
+    }
+
 TRACER_END

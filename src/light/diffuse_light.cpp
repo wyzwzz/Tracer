@@ -5,6 +5,7 @@
 #include "core/intersection.hpp"
 #include "core/shape.hpp"
 #include "utility/logger.hpp"
+#include "core/sampling.hpp"
 TRACER_BEGIN
 
 DiffuseLight::DiffuseLight(const RC<const Shape> &shape, const Spectrum &emission)
@@ -53,9 +54,35 @@ LightSampleResult DiffuseLight::sample_li(const SurfacePoint& ref,const Sample5&
     return ret;
 }
 
-LightEmitResult DiffuseLight::sample_le(const Sample5 &) const {
-    NOT_IMPL
-    return {};
+LightEmitResult DiffuseLight::sample_le(const Sample5 &sample) const {
+    real pdf_pos;
+    auto sample_pt = shape->sample(&pdf_pos,{sample.u,sample.v});
+    auto local_dir = CosineSampleHemisphere({sample.r,sample.s});
+    auto pdf_dir = CosineHemispherePdf(local_dir.z);
+    Vector3f s,t;
+    coordinate((Vector3f)sample_pt.n,s,t);
+    auto world_dir = local_dir.x * s + local_dir.y * t + local_dir.z * (Vector3f)sample_pt.n;
+
+    LightEmitResult ret;
+    ret.n = sample_pt.n;
+    ret.pos = sample_pt.eps_offset(world_dir);
+    ret.uv = sample_pt.uv;
+    ret.dir = world_dir;
+    ret.pdf_dir = pdf_dir;
+    ret.pdf_pos = pdf_pos;
+    ret.radiance = emission;
+
+    return ret;
+}
+
+LightEmitPdfResult DiffuseLight::emit_pdf(const Point3f &ref, const Vector3f &dir, const Vector3f &n) const noexcept {
+    real pdf_pos = shape->pdf(ref);
+    real cos_theta = dot(dir,n) / (dir.length() * n.length());
+    real pdf_dir = CosineHemispherePdf(cos_theta);
+    LightEmitPdfResult ret;
+    ret.pdf_pos = pdf_pos;
+    ret.pdf_dir = pdf_dir;
+    return ret;
 }
 
 

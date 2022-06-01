@@ -21,6 +21,46 @@ inline int actual_worker_count(int worker_count) noexcept
     return (std::max)(1, worker_count);
 }
 
+    template<typename F>
+    void parallel_for_1d_grid(int thread_count, int width, int grid_size, F &&func)
+    {
+        const int task_count = (width + grid_size - 1) / grid_size;
+
+        std::atomic<int> next_task = 0;
+
+        auto task = [&](int thread_index)
+        {
+            for(;;)
+            {
+                const int task_idx = next_task++;
+                if(task_idx >= task_count)
+                    return;
+
+                const int beg = task_idx * grid_size;
+                const int end = (std::min)(beg + grid_size, width);
+
+                if constexpr(
+                        std::is_convertible_v<
+                                decltype(func(thread_index, beg, end)), bool>)
+                {
+                    if(!func(thread_index, beg, end))
+                        return;
+                }
+                else
+                    func(thread_index, beg, end);
+            }
+        };
+
+        std::vector<std::thread> threads;
+        for(int i = 0; i < thread_count; i++){
+            threads.emplace_back(task,i);
+        }
+        for(auto& t:threads){
+            t.join();
+        }
+    }
+
+
     //todo capture or handle exception
     template<typename F>
     void parallel_for_2d(int thread_count,

@@ -27,7 +27,7 @@ public:
 
     virtual BXDFSampleResult sample(const Vector3f& wo,const Sample2& sample) const = 0;
 
-
+    virtual bool has_diffuse() const = 0;
 
 };
 TRACER_END

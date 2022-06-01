@@ -20,7 +20,21 @@ struct PTRendererParams{
 
 RC<Renderer> create_pt_renderer(const PTRendererParams& params);
 
+struct SPPMRendererParams{
+    real init_search_radius;
+    int worker_count = 0;
+    int iteration_count = 100;
+    int photons_per_iteration = 100000;
+    int task_tile_size = 16;
+    int ray_trace_max_depth = 8;
 
+    int photon_min_depth = 5;
+    int photon_max_depth = 10;
+
+    real update_alpha = real(2) / 3;
+};
+
+RC<Renderer> create_sppm_renderer(const SPPMRendererParams& params);
 
 TRACER_END
 

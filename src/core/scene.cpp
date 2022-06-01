@@ -44,6 +44,10 @@ TRACER_BEGIN
                 environment_light->preprocess(accel->world_bound());
             }
         }
+
+        Bounds3f world_bounds() const noexcept override{
+            return accel->world_bound();
+        }
     };
 
     RC<Scene> create_general_scene(){

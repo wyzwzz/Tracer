@@ -4,6 +4,7 @@
 #include "core/camera.hpp"
 #include "core/sampling.hpp"
 #include "utility/transform.hpp"
+#include "core/spectrum.hpp"
 TRACER_BEGIN
 
     class ThinLensCamera: public Camera{
@@ -55,6 +56,61 @@ TRACER_BEGIN
             ray.d = pos_to_out;
 
             return 1.f;
+        }
+
+        CameraEvalWeResult eval_we(const Point3f& pos_on_cam,const Vector3f& pos_to_out) const noexcept override{
+            Point3f lens_pos = inverse(camera_to_world)(pos_on_cam);
+            Vector3f local_dir = normalize(inverse(camera_to_world)(pos_to_out));
+
+            if(local_dir.z <= 0){
+                return {};
+            }
+
+            Point3f focal_film_pos = lens_pos + (focal_distance / local_dir.z) * local_dir;
+
+            Point2f film_coord = {
+                    real(0.5) - focal_film_pos.x / focal_film_width,
+                    real(0.5) - focal_film_pos.y / focal_film_height
+            };
+
+            real cos2_theta = local_dir.z * local_dir.z;
+            real we = focal_distance * focal_distance / (area_focal_film * area_lens * cos2_theta * cos2_theta);
+            CameraEvalWeResult ret;
+            ret.film_coord = film_coord;
+            ret.we = Spectrum(we);
+            ret.n = (Normal3f)dir;
+            return ret;
+        }
+
+        CameraPdfWeResult pdf_we(const Point3f& pos_on_cam,const Vector3f& pos_to_out) const noexcept override{
+            return {};
+        }
+
+        CameraSampleWiResult sample_wi(const Point3f& ref,const Sample2& sample) const noexcept override{
+            Point3f local_ref = inverse(camera_to_world)(ref);
+            //sample lens
+            Point2f disk_pos = ConcentricSampleDisk(sample);
+            Point3f lens_pos = {disk_pos.x,disk_pos.y,0};
+
+            Vector3f local_dir = normalize(local_ref - lens_pos);
+            if(local_dir.z <= 0){
+                return {};
+            }
+            Point3f pos_on_focal = lens_pos + (focal_distance / local_dir.z) * local_dir;
+            //0 ~ 1
+            Point2f film_pos = {
+                    real(0.5) - pos_on_focal.x / focal_film_width,
+                    real(0.5) - pos_on_focal.y / focal_film_height
+            };
+
+            CameraSampleWiResult ret;
+            ret.n = (Normal3f)dir;
+            ret.pos_on_cam = camera_to_world(lens_pos);
+            ret.ref_to_pos = ret.pos_on_cam - ref;
+            ret.we = eval_we(ret.pos_on_cam,-ret.ref_to_pos).we;
+            ret.pdf = (ret.pos_on_cam - ref).length_squared() / (local_dir.z * area_lens);
+            ret.film_coord = film_pos;
+            return ret;
         }
 
     };

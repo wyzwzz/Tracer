@@ -33,25 +33,39 @@ cost = 1 + left_count * left_bounds_area / total_bounds_area + right_count * rig
 每个节点需要存储第二个子节点在数组中的偏移 默认下一个子节点就是当前节点+1
 因为BVH树是必定同时有左右节点的
 想要找到最近的交点 可以在每一次找到交点时 改变ray的t_max 每次计算交点的t 只有t_min < t < t_max才被判定为相交
-
+### Texture
+png格式即rgba8888纹理是位于gamma空间？
 ### SurfaceIntersection
 根据相交点生成新的光线时 应该根据表面的法向量对光线的起点进行一定程度的偏移 不然相交点还是原先的旧点
 ### Light
 #### AreaLight
 ##### DiffuseLight
 由shape构成 均匀的发光 以后可能可以支持Ke ImageTexture
+应该需要设计一个mesh area light 否则对于mesh代表的球形光源 area light数量太多
 #### EnvironmentLight
-环境光
+环境光 由一个世界包围盒的外接球代表 有中心和半径两个参数
+计算环境光的二维分布
+注意pdf对于连续变量来说 其值是可以大于1的
 
 ## 渲染器
 ### PathTrace 路径追踪
 
+
+### SPPM 光子映射
+基本思路是两阶段 
+第一阶段从相机发出光线 如果是specular的话 就继续发射 如果是diffuse的话 则停止并记录该点到所属的grid的链表中
+第二阶段 从光源出发射光子 与场景相交 找到交点所属的grid 遍历链表其 找到那些半径包括该光子的可视点所属的像素 将该光子的贡献计算到这些像素
+这里每一个grid元素存储的链表是那些SPPMPixel指针 即一个grid元素可以对应到多个像素 这当中的光系由可视点映射
+一个像素每次发射光线 找到场景中的可视点 每一个可视点根据空间划分到一个grid当中 相当于把这个像素插入到这个grid的链表中
+每一次迭代都会重新生成可视点 SPPMPixel中每一次迭代完之后只保留tau radius N direct_illum
 ## Source Code
 ### core
 主要是定义一些抽象接口类
 #### sampler
 提供生成均匀分布的随机数 十分原始简单 效率可能比较低
 #### material
+##### glass
+由fresnel确定折射和反射的百分比即概率
 #### shape
 几何形状的抽象基类 可以派生出各种具体的形状类
 #### primitive

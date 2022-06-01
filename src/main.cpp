@@ -37,7 +37,7 @@ struct RenderParams{
     std::string ibl_file_name;
 
 };
-PTRendererParams pt_params{18,16,512,3,10,1};
+PTRendererParams pt_params{18,16,1024,5,10,1};
 
 void run(const RenderParams& params){
     auto filter = create_gaussin_filter(params.filter.radius,params.filter.alpha);
@@ -165,7 +165,7 @@ int main(int argc,char** argv){
     RenderParams veach_mis = {
         .render_result_name = "tracer_veach-mis",
         .filter = {.radius = 0.5,.alpha = 0.6},
-        .render_target_width = 1200,
+        .render_target_width = 1280,
         .render_target_height = 900,
         .camera = {
                 .pos = {0.0,2.0,15.0},
@@ -177,8 +177,40 @@ int main(int argc,char** argv){
         },
         .obj_file_name = "veach-mis.obj"
     };
+    RenderParams diningroom = {
+            .render_result_name = "tracer_diningroom",
+            .filter = {.radius = 0.5,.alpha = 0.6},
+            .render_target_width = 1300,
+            .render_target_height = 750,
+            .camera = {
+                    .pos = {0.0,12.720,31.850},
+                    .target = {0.0,12.546,30.865},
+                    .up = {0.0,0.985,-0.174},
+                    .fov = PI_r * 45 / 180.0,
+                    .lens_radius = 0,
+                    .focal_dist = 10.0
+            },
+            .obj_file_name = "diningroom.obj"
+    };
+
+    RenderParams cornellbox = {
+            .render_result_name = "tracer_cornellbox",
+            .filter = {.radius = 0.5,.alpha = 0.6},
+            .render_target_width = 1024,
+            .render_target_height = 1024,
+            .camera = {
+                    .pos = {0,0,2.5},
+                    .target = {0,0,0},
+                    .up = {0,1,0},
+                    .fov = PI_r * 60 / 180.0,
+                    .lens_radius = 0,
+                    .focal_dist = 10.0
+            },
+            .obj_file_name = "cornellbox.obj"
+    };
+
     try{
-        run(bedroom);
+        run(cornellbox);
     }
     catch(const std::exception& e){
         LOG_CRITICAL("exception: {}",e.what());

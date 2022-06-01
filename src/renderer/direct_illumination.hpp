@@ -8,6 +8,7 @@
 #include "core/bsdf.hpp"
 #include "core/intersection.hpp"
 #include "core/sampler.hpp"
+#include "utility/distribution.hpp"
 TRACER_BEGIN
 
 Spectrum sample_light(const Scene& scene,const Light* light,
@@ -27,6 +28,8 @@ Spectrum sample_environment_light(const Scene& scene,const EnvironmentLight* lig
 
 Spectrum sample_bsdf(const Scene& scene,const SurfaceIntersection& isect,
                      const SurfaceShadingPoint& shd_p,Sampler& sampler);
+
+Box<Distribution1D> compute_light_power_distribution(const Scene& scene);
 
 TRACER_END
 #endif //TRACER_DIRECT_ILLUMINATION_HPP

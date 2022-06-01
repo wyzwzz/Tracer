@@ -24,6 +24,8 @@ public:
 
     virtual SurfacePoint sample(const SurfacePoint& ref,real* pdf,const Sample2& sample) const noexcept = 0;
 
+    virtual real pdf(const Point3f& pos) const noexcept = 0;
+
     virtual real pdf(const SurfacePoint& p) const noexcept = 0;
 
     virtual real pdf(const SurfacePoint&ref, const Vector3f& wi) const noexcept = 0;

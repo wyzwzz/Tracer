@@ -78,6 +78,10 @@ TRACER_BEGIN
             return sample(pdf,sam);
         }
 
+        real pdf(const Point3f& pos) const noexcept override{
+            return 1 / surface_area();
+        }
+
         real pdf(const SurfacePoint& p) const noexcept{
             NOT_IMPL
             return 0;

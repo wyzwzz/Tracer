@@ -72,5 +72,8 @@ TRACER_BEGIN
         return ret;
     }
 
+    bool PhongSpecularBXDF::has_diffuse() const {
+        return false;
+    }
 
 TRACER_END

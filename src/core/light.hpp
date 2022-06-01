@@ -27,7 +27,18 @@ struct LightSampleResult{
 };
 
 struct LightEmitResult{
+    Point3f pos;//emit pos on light
+    Vector3f dir;
+    Normal3f n;
+    Point2f uv;
+    Spectrum radiance;
+    real pdf_pos;
+    real pdf_dir;
+};
 
+struct LightEmitPdfResult{
+    real pdf_pos;
+    real pdf_dir;
 };
 
 class Light{
@@ -43,6 +54,8 @@ public:
     virtual LightSampleResult sample_li(const SurfacePoint& ref,const Sample5&) const = 0;
 
     virtual LightEmitResult sample_le(const Sample5&) const = 0;
+
+    virtual LightEmitPdfResult emit_pdf(const Point3f& ref,const Vector3f& dir,const Vector3f& n) const noexcept = 0;
 protected:
     Transform world_to_light;
 };

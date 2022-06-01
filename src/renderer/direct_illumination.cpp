@@ -152,4 +152,15 @@ TRACER_BEGIN
 //        return f / (bsdf_sample_ret.pdf + light_pdf);
         return f * weight / bsdf_sample_ret.pdf;//pbrt
     }
+
+Box<Distribution1D> compute_light_power_distribution(const Scene& scene){
+    if(scene.lights.empty()) return nullptr;
+    std::vector<real> light_power;
+    for(const auto& light:scene.lights){
+        light_power.emplace_back(light->power().lum());
+    }
+    return newBox<Distribution1D>(light_power.data(),light_power.size());
+}
+
+
 TRACER_END

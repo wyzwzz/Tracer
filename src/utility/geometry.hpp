@@ -195,6 +195,8 @@ namespace tracer {
         // Point3 Public Methods
         Point3() { x = y = z = 0; }
 
+        Point3(T v):x(v),y(v),z(v){}
+
         Point3(T x, T y, T z) : x(x), y(y), z(z) {}
 
         template<typename U>
@@ -359,6 +361,8 @@ namespace tracer {
         }
         Vector3() { x = y = z = 0; }
         Vector3(T x, T y, T z) : x(x), y(y), z(z) { }
+        Vector3(T v):x(v),y(v),z(v){}
+
         explicit Vector3(const Point3<T> &p)
         :x(p.x),y(p.y),z(p.z)
         {}
@@ -615,6 +619,7 @@ namespace tracer {
     using Point2f = Point2<real>;
     using Point3f = Point3<real>;
     using Point3b = Point3<uint8_t>;
+    using Point3i = Point3<int>;
     using Vector3i = Vector3<int>;
     using Vector2i = Vector2<int>;
     using Vector3f = Vector3<real>;

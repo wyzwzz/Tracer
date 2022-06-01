@@ -21,6 +21,7 @@ public:
 
     LightEmitResult sample_le(const Sample5&) const override;
 
+    LightEmitPdfResult emit_pdf(const Point3f& ref,const Vector3f& dir,const Vector3f& n) const noexcept override;
 private:
     const Spectrum emission;
     const RC<const Shape> shape;

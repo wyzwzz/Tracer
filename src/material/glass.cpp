@@ -79,6 +79,10 @@ public:
     bool is_delta() const override{
         return true;
     }
+
+    bool has_diffuse() const override{
+        return false;
+    }
 private:
     static std::optional<Vector3f> refract_dir(const Vector3f& lwo,const Vector3f& n,real eta){
         const real cos_theta_i = std::abs(lwo.z);

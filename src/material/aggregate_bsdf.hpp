@@ -136,6 +136,15 @@ TRACER_BEGIN
         bool is_delta() const override{
             return false;
         }
+
+        bool has_diffuse() const override{
+            for(int i = 0; i < bxdfs_count; ++i){
+                if(bxdfs[i]->has_diffuse()){
+                    return true;
+                }
+            }
+            return false;
+        }
     };
 
 TRACER_END

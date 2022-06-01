@@ -19,6 +19,7 @@ public:
 
     BXDFSampleResult sample(const Vector3f& wo,const Sample2& sample) const override;
 
+    bool has_diffuse() const override;
 
 private:
     Spectrum specular;

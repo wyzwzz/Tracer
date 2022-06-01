@@ -90,6 +90,11 @@ T* alloc_aligned(size_t count){
             for (const auto &alloc : available_blocks) total += alloc.first;
             return total;
         }
+        size_t used_bytes() const{
+            size_t used = 0;
+            for(const auto& alloc:used_blocks) used += alloc.first;
+            return used;
+        }
 
     private:
         const size_t max_block_size;
@@ -97,6 +102,21 @@ T* alloc_aligned(size_t count){
         uint8_t *current_block = nullptr;
         std::list<std::pair<size_t, uint8_t *>> used_blocks, available_blocks;
     };
+
+    /**
+ * @brief 浮点数原子加法
+ */
+    template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+    void atomic_add(std::atomic<T> &original, T add_val)
+    {
+        T cur_val = original.load(std::memory_order_consume);
+        T new_val = cur_val + add_val;
+        while(!original.compare_exchange_weak(
+                cur_val, new_val, std::memory_order_release, std::memory_order_consume))
+        {
+            new_val = cur_val + add_val;
+        }
+    }
 
 TRACER_END
 

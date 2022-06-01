@@ -119,6 +119,12 @@ TRACER_BEGIN
             return {};
         }
 
+        LightEmitPdfResult emit_pdf(const Point3f& ref,const Vector3f& dir,const Vector3f& n) const noexcept override{
+            NOT_IMPL
+            return {};
+        }
+
+
         Spectrum light_emit(const Point3f& ref,const Vector3f& ref_to_light) const noexcept override{
             Vector3f dir = normalize(ref_to_light);
             dir = normalize(world_to_light(dir));
