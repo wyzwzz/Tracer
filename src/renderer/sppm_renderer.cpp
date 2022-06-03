@@ -39,6 +39,7 @@ struct SPPMPixel{
          N = p.N;
          tau = p.tau;
          direct_illum = p.direct_illum;
+         total_count = p.total_count.load();
     }
     SPPMPixel& operator=(const SPPMPixel& p) noexcept{
         new(this) SPPMPixel(p);
@@ -55,6 +56,7 @@ struct SPPMPixel{
     std::atomic<int> M = 0;
     real N = 0;
     Spectrum tau;
+    std::atomic<int> total_count = 0;
 };
 
 
@@ -104,11 +106,12 @@ public:
             Spectrum delta_phi = phi * pixel.vp.bsdf->eval(wi,pixel.vp.wo);
             if(!delta_phi.is_finite())
                 continue;
+
             for(int i = 0; i < SPECTRUM_COMPONET_COUNT; ++i){
-                //todo atomic float add
                 atomic_add(pixel.phi[i],delta_phi[i]);
             }
             ++pixel.M;
+            ++pixel.total_count;
         }
     }
 private:
@@ -165,7 +168,7 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
 
 
     real init_search_radius = params.init_search_radius;
-    if(init_search_radius < 0){
+    if(init_search_radius <= 0){
         init_search_radius = (world_bounds.high - world_bounds.low).length() / 1000;
     }
     world_bounds.low -= Vector3f(init_search_radius);
@@ -227,6 +230,7 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
                         if(auto light = scene.environment_light.get()){
                             sppm_pixel.direct_illum += coef * light->light_emit(ray.o,ray.d);
                         }
+                        break;
                     }
 
                     const SurfaceShadingPoint shd_p = isect.material->shading(isect,arena);
@@ -256,7 +260,7 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
 
                     if(depth == params.ray_trace_max_depth - 1) break;
                     const auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,sampler->sample3());
-                    if(!bsdf_sample_ret.f)
+                    if(!bsdf_sample_ret.f || bsdf_sample_ret.pdf < eps)
                         break;
                     specular_bounce = bsdf_sample_ret.is_delta;
                     coef *= bsdf_sample_ret.f / bsdf_sample_ret.pdf * abs_dot(bsdf_sample_ret.wi,isect.shading.n);
@@ -283,9 +287,14 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
                 //emit a photon
                 real light_pdf;
                 int light_index = scene_light_distribution->sample_discrete(sampler->sample1().u,&light_pdf);
+                if(light_pdf == 0){
+                    LOG_CRITICAL("invalid light pdf");
+                }
+
                 assert(light_index < scene.lights.size());
                 const auto& light = scene.lights[light_index];
-                assert(light);
+                if(!light)
+                    break;
                 const auto emit = light->sample_le(sampler->sample5());
                 if(emit.radiance.is_back()){
                     break;
@@ -296,6 +305,9 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
                 Ray ray(emit.pos,emit.dir,eps);
                 //trace the photon emitted
                 for(int depth = 1; depth <= params.photon_max_depth; ++depth){
+                    if(!coef.is_finite()){
+                        break;
+                    }
                     SurfaceIntersection isect;
                     if(!scene.intersect_p(ray,&isect)){
                         break;
@@ -308,24 +320,24 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
 
                     auto shd_p = isect.material->shading(isect,arena);
                     //todo importance sample
-                    auto bsdf_sample_ret = shd_p.bsdf->sample(
-                            isect.wo,sampler->sample3());
-                    if(bsdf_sample_ret.f.is_back()){
+                    auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,sampler->sample3());
+                    if(bsdf_sample_ret.f.is_back() || bsdf_sample_ret.pdf < eps){
                         break;
                     }
 
-                    Spectrum beta = coef * bsdf_sample_ret.f *
+                    coef *= bsdf_sample_ret.f *
                             abs_dot(bsdf_sample_ret.wi,isect.shading.n) / bsdf_sample_ret.pdf;
-
+//                    if(coef.r > 1 || coef.g > 1 || coef.b > 1){
+//                        LOG_CRITICAL("invalid coef");
+//                        break;
+//                    }
                     //apply russian roulette
                     if(depth >= params.photon_min_depth){
-                        real q = std::max<real>(0,1 - beta.lum() / coef.lum());
-                        if(sampler->sample1().u < q) break;
-                        coef = beta / (1 - q);
+                        if(sampler->sample1().u > 0.9)
+                            break;
+                        coef /= 0.9;
                     }
-                    else{
-                        coef = beta;
-                    }
+
                     ray = Ray(isect.eps_offset(bsdf_sample_ret.wi),bsdf_sample_ret.wi);
                 }
                 if(arena.used_bytes() > (4 << 20)){
@@ -351,7 +363,7 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
             max_radius = init_search_radius;
         }
 
-        parallel_for_1d_grid(thread_count,film_width,16,
+        parallel_for_1d_grid(thread_count,film_height,16,
                              [&](int thread_index,int begin,int end)
         {
             for(int y = begin; y < end; ++y){
@@ -365,7 +377,10 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
                         Spectrum phi;
                         for(int i = 0; i < SPECTRUM_COMPONET_COUNT; ++i)
                             phi[i] = pixel.phi[i];
-                        pixel.tau = (pixel.tau * pixel.vp.coef * phi) * (new_R * new_R) / (pixel.radius * pixel.radius);
+                        if(pixel.radius == 0){
+                            LOG_CRITICAL("invalid radius");
+                        }
+                        pixel.tau = (pixel.tau + pixel.vp.coef * phi) * (new_R * new_R) / (pixel.radius * pixel.radius);
                         pixel.N = new_N;
                         pixel.radius = new_R;
                         pixel.M = 0;
@@ -394,7 +409,7 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
             Spectrum direct_illum = pixel.direct_illum / (real)direct_illum_count;
             real dem = photon_count * PI_r * pixel.radius * pixel.radius;
             Spectrum photon_illum = pixel.tau / dem;
-            ret.color(x,y) = direct_illum + photon_illum;
+            ret.color(x,y) =  direct_illum + photon_illum;//Spectrum(pixel.total_count * 1.0 / 500);
         }
     }
     return ret;
