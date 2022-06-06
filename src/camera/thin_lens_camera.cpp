@@ -83,6 +83,7 @@ TRACER_BEGIN
         }
 
         CameraPdfWeResult pdf_we(const Point3f& pos_on_cam,const Vector3f& pos_to_out) const noexcept override{
+            //todo
             return {};
         }
 

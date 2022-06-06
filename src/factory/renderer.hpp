@@ -36,6 +36,17 @@ struct SPPMRendererParams{
 
 RC<Renderer> create_sppm_renderer(const SPPMRendererParams& params);
 
+struct BDPTRendererParams{
+    int worker_count = 0;
+    int task_tile_size = 16;
+    int max_camera_vertex_count = 10;
+    int max_light_vertex_count = 10;
+    int spp = 1;
+
+};
+
+RC<Renderer> create_bdpt_renderer(const BDPTRendererParams& params);
+
 TRACER_END
 
 #endif //TRACER_FACTORY_RENDERER_HPP

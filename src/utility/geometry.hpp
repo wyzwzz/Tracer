@@ -925,6 +925,12 @@ namespace tracer {
                 p.y <= b.high.y && p.z >= b.low.z && p.z <= b.high.z);
     }
 
+    template <typename T>
+    bool inside(const Point2<T> &p, const Bounds2<T> &b) {
+        return (p.x >= b.low.x && p.x <= b.high.x && p.y >= b.low.y &&
+                p.y <= b.high.y );
+    }
+
     template <typename T, typename U>
     inline real distance_squared(const Point3<T> &p, const Bounds3<U> &b) {
         real dx = std::max<real>({0, b.low.x - p.x, p.x - b.high.x});
@@ -940,6 +946,10 @@ namespace tracer {
     template <typename T>
     inline real distance(const Point3<T> &p1, const Point3<T> &p2) {
         return (p1 - p2).length();
+    }
+    template <typename T>
+    inline real distance_squared(const Point3<T> &p1, const Point3<T> &p2) {
+        return (p1 - p2).length_squared();
     }
 }
 

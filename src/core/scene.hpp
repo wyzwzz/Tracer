@@ -20,6 +20,8 @@ public:
 
     virtual bool intersect_p(const Ray& ray,SurfaceIntersection* isect) const = 0;
 
+    virtual bool visible(const Point3f& p,const Point3f& q) const = 0;
+
     virtual Bounds3f world_bounds() const noexcept = 0;
 
     virtual void prepare_to_render() = 0;

@@ -111,7 +111,9 @@ struct RenderTarget{
                 }
             }
         }
-
+        const RC<Filter>& get_filter() const{
+            return filter;
+        }
     private:
         Point2i resolution;
         RC<Filter> filter;

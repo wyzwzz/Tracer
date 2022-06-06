@@ -23,6 +23,11 @@ Spectrum DiffuseLight::light_emit(const SurfacePoint& sp,const Vector3f& w) cons
      return dot(sp.n,w) > 0 ? emission : Spectrum (0);
 }
 
+Spectrum DiffuseLight::light_emit(const Point3f &pos, const Normal3f &n, const Point2f &uv,
+                                  const Vector3f light_to_out) const noexcept {
+    return dot(n,light_to_out) > 0 ? emission : Spectrum(0);
+}
+
 real DiffuseLight::pdf(const Point3f& ref,const Point3f& pos,const Normal3f& n) const noexcept {
     if(dot(n,ref - pos) <= 0)
         return 0;

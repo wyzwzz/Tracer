@@ -55,9 +55,19 @@ png格式即rgba8888纹理是位于gamma空间？
 基本思路是两阶段 
 第一阶段从相机发出光线 如果是specular的话 就继续发射 如果是diffuse的话 则停止并记录该点到所属的grid的链表中
 第二阶段 从光源出发射光子 与场景相交 找到交点所属的grid 遍历链表其 找到那些半径包括该光子的可视点所属的像素 将该光子的贡献计算到这些像素
-这里每一个grid元素存储的链表是那些SPPMPixel指针 即一个grid元素可以对应到多个像素 这当中的光系由可视点映射
+这里每一个grid元素存储的链表是那些SPPMPixel指针 即一个grid元素可以对应到多个像素 这当中的光子由可视点映射
 一个像素每次发射光线 找到场景中的可视点 每一个可视点根据空间划分到一个grid当中 相当于把这个像素插入到这个grid的链表中
 每一次迭代都会重新生成可视点 SPPMPixel中每一次迭代完之后只保留tau radius N direct_illum
+
+### BDPT
+默认的BSDF计算的PDF其实是Solid Angle 这个从积分式的微分项也可以看出
+而在BDPT中根据多重采样的需要 光源路径涉及到多种采样策略 
+需要将Solid Angle PDF转换为 PDF per unit area
+Vertex中pdf_fwd存储的是从这个点到下一个点的pdf per unit area
+pdf_bwd是从下一个点到这个点的pdf per unit area
+accu_coef 的计算是根据solid angle pdf进行的
+## Utility
+atomic float add
 ## Source Code
 ### core
 主要是定义一些抽象接口类

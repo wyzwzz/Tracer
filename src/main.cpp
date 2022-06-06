@@ -39,6 +39,17 @@ struct RenderParams{
 };
 PTRendererParams pt_params{18,16,1024,5,10,1};
 
+SPPMRendererParams sppm_params{.init_search_radius = 0.25,
+                               .worker_count = 20,
+                               .iteration_count = 4096,
+                               .photons_per_iteration = 120000,
+                               .task_tile_size = 16,
+                               .ray_trace_max_depth = 8,
+                               .photon_min_depth = 5,
+                               .photon_max_depth = 10,
+                               .update_alpha = real(2)/3
+                                };
+
 void run(const RenderParams& params){
     auto filter = create_gaussin_filter(params.filter.radius,params.filter.alpha);
     auto camera = create_thin_lens_camera((real)params.render_target_width/params.render_target_height,
@@ -104,13 +115,16 @@ void run(const RenderParams& params){
     scene->lights = area_lights;
     scene->set_camera(camera);
     if(!params.ibl_file_name.empty()){
-        auto env_map = create_texture2d_from_file("C:/Users/wyz/projects/RayTracer/data/CG2020-master/car/environment_day.hdr");
+        auto env_map = create_texture2d_from_file(params.ibl_file_name);
         auto ibl = create_ibl_light(env_map, rotate_x(PIOver2_r));
         scene->environment_light = ibl;
         scene->lights.push_back(ibl.get());
     }
     scene->prepare_to_render();
-    auto renderer = create_pt_renderer(pt_params);
+    //create renderer
+//    auto renderer = create_pt_renderer(pt_params);
+    auto renderer = create_sppm_renderer(sppm_params);
+
     AutoTimer timer("render","s");
     auto render_target = renderer->render(*scene.get(), Film({params.render_target_width, params.render_target_height}, filter));
     write_image_to_hdr(render_target.color, params.render_result_name+".hdr");
@@ -178,10 +192,10 @@ int main(int argc,char** argv){
         .obj_file_name = "veach-mis.obj"
     };
     RenderParams diningroom = {
-            .render_result_name = "tracer_diningroom",
+            .render_result_name = "tracer_diningroom_sppm",
             .filter = {.radius = 0.5,.alpha = 0.6},
-            .render_target_width = 1300,
-            .render_target_height = 750,
+            .render_target_width = 450,
+            .render_target_height = 270,
             .camera = {
                     .pos = {0.0,12.720,31.850},
                     .target = {0.0,12.546,30.865},
@@ -194,10 +208,10 @@ int main(int argc,char** argv){
     };
 
     RenderParams cornellbox = {
-            .render_result_name = "tracer_cornellbox",
+            .render_result_name = "tracer_cornellbox_sppm",
             .filter = {.radius = 0.5,.alpha = 0.6},
-            .render_target_width = 1024,
-            .render_target_height = 1024,
+            .render_target_width = 600,
+            .render_target_height = 600,
             .camera = {
                     .pos = {0,0,2.5},
                     .target = {0,0,0},
@@ -210,7 +224,7 @@ int main(int argc,char** argv){
     };
 
     try{
-        run(cornellbox);
+        run(diningroom);
     }
     catch(const std::exception& e){
         LOG_CRITICAL("exception: {}",e.what());

@@ -66,6 +66,13 @@ TRACER_BEGIN
          else return b;
      }
 
+      const T& operator[](int idx) const{
+        assert(idx<3 && idx >= 0);
+        if(idx == 0) return r;
+        else if(idx == 1) return g;
+        else return b;
+    }
+
      T max_component_value(){
          T v = (*this)[0];
          for(int i = 1; i < 3; i++)

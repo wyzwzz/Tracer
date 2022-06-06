@@ -39,6 +39,13 @@ TRACER_BEGIN
             return accel->intersect_p(ray,isect);
         }
 
+        bool visible(const Point3f& p,const Point3f& q) const override{
+            const real dist = (p - q).length();
+            Ray r(p,normalize(p - q),eps,dist - eps);
+            return !intersect(r);
+        }
+
+
         void prepare_to_render() override{
             if(environment_light){
                 environment_light->preprocess(accel->world_bound());
