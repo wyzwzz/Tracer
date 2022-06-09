@@ -78,6 +78,7 @@ public:
                 for(int i = 0; i < direct_light_sample_num; ++i){
                     //sample from all lights
                     for(auto light:scene.lights){
+                        //todo replace with sample one light
                         direct_illum += coef * sample_light(scene,light,isect,shading_p,sampler);
 
                     }

@@ -60,7 +60,7 @@ TRACER_BEGIN
 
         CameraEvalWeResult eval_we(const Point3f& pos_on_cam,const Vector3f& pos_to_out) const noexcept override{
             Point3f lens_pos = inverse(camera_to_world)(pos_on_cam);
-            Vector3f local_dir = normalize(inverse(camera_to_world)(normalize(pos_to_out)));
+            Vector3f local_dir = inverse(camera_to_world)(normalize(pos_to_out)).normalize();
 
             if(local_dir.z <= 0){
                 return {};
@@ -83,7 +83,7 @@ TRACER_BEGIN
         }
 
         CameraPdfWeResult pdf_we(const Point3f& pos_on_cam,const Vector3f& pos_to_out) const noexcept override{
-            Vector3f local_dir = inverse(camera_to_world)(normalize(pos_to_out));
+            Vector3f local_dir = inverse(camera_to_world)(normalize(pos_to_out)).normalize();
 
             if(local_dir.z <= 0)
                 return { 1 / area_lens, 0};

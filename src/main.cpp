@@ -59,9 +59,9 @@ SPPMRendererParams sppm_params{.init_search_radius = 0.25,
 BDPTRendererParams bdpt_params{
     .worker_count = 18,
     .task_tile_size = 16,
-    .max_camera_vertex_count = 10,
-    .max_light_vertex_count = 10,
-    .spp =  16
+    .max_camera_vertex_count = 12,
+    .max_light_vertex_count = 12,
+    .spp =  1024
 };
 
 void run(const RenderParams& params){
@@ -207,10 +207,10 @@ int main(int argc,char** argv){
         .obj_file_name = "veach-mis.obj"
     };
     RenderParams diningroom = {
-            .render_result_name = "tracer_diningroom_bdpt_test",
+            .render_result_name = "tracer_diningroom_bdpt_1024",
             .filter = {.radius = 0.5,.alpha = 0.6},
-            .render_target_width = 450,
-            .render_target_height = 270,
+            .render_target_width = 1280,
+            .render_target_height = 720,
             .camera = {
                     .pos = {0.0,12.720,31.850},
                     .target = {0.0,12.546,30.865},
