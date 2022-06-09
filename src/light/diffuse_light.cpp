@@ -20,7 +20,7 @@ Spectrum DiffuseLight::power() const noexcept {
 }
 
 Spectrum DiffuseLight::light_emit(const SurfacePoint& sp,const Vector3f& w) const noexcept {
-     return dot(sp.n,w) > 0 ? emission : Spectrum (0);
+     return dot(sp.geometry_coord.z,w) > 0 ? emission : Spectrum (0);
 }
 
 Spectrum DiffuseLight::light_emit(const Point3f &pos, const Normal3f &n, const Point2f &uv,
@@ -44,17 +44,17 @@ real DiffuseLight::pdf(const Point3f& ref,const Point3f& pos,const Normal3f& n) 
 LightSampleResult DiffuseLight::sample_li(const SurfacePoint& ref,const Sample5& sample) const {
     real area_pdf;//equal to 1 / surface area
     auto sp = shape->sample(ref,&area_pdf,{sample.u,sample.v});
-    if(dot(sp.n,ref.pos - sp.pos) <= 0)
+    if(dot(sp.geometry_coord.z,ref.pos - sp.pos) <= 0)
         return {};
     Vector3f sp2ref = ref.pos - sp.pos;
     real dist2 = sp2ref.length_squared();
-    real pdf = area_pdf * dist2 / std::abs(dot(sp.n,sp2ref) / (sp2ref.length()));
+    real pdf = area_pdf * dist2 / std::abs(dot(sp.geometry_coord.z,sp2ref) / (sp2ref.length()));
 
     LightSampleResult ret;
     ret.pos = sp.pos;
     ret.pdf = pdf;
     ret.radiance = emission;
-    ret.n = sp.n;
+    ret.n = (Normal3f)sp.geometry_coord.z;
     ret.uv = sp.uv;
     return ret;
 }
@@ -64,12 +64,11 @@ LightEmitResult DiffuseLight::sample_le(const Sample5 &sample) const {
     auto sample_pt = shape->sample(&pdf_pos,{sample.u,sample.v});
     auto local_dir = CosineSampleHemisphere({sample.r,sample.s});
     auto pdf_dir = CosineHemispherePdf(local_dir.z);
-    Vector3f s,t;
-    coordinate((Vector3f)sample_pt.n,s,t);
-    auto world_dir = local_dir.x * s + local_dir.y * t + local_dir.z * (Vector3f)sample_pt.n;
+
+    auto world_dir = sample_pt.geometry_coord.local_to_global(local_dir);
 
     LightEmitResult ret;
-    ret.n = sample_pt.n;
+    ret.n = (Normal3f)sample_pt.geometry_coord.z;
     ret.pos = sample_pt.eps_offset(world_dir);
     ret.uv = sample_pt.uv;
     ret.dir = world_dir;

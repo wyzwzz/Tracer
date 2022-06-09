@@ -77,6 +77,13 @@ constexpr real REAL_MAX = std::numeric_limits<real>::max();
     template<int N>
     struct SampleN { real u[N]; };
 
+    enum class TransportMode{
+        Radiance = 0,
+        Importance = 1
+    };
+    inline TransportMode operator!(TransportMode mode){
+        return mode == TransportMode::Radiance ? TransportMode::Importance : TransportMode::Radiance;
+    }
 
 // smart pointers
 
@@ -114,6 +121,20 @@ constexpr real REAL_MAX = std::numeric_limits<real>::max();
         return v && !(v & (v - 1));
     }
 
+    class NoCopy{
+    public:
+        NoCopy() = default;
+
+        NoCopy(const NoCopy&) = delete;
+
+        NoCopy& operator=(const NoCopy&) = delete;
+    };
+    class NoMove{
+    public:
+        NoMove() = default;
+        NoMove(NoMove&&) noexcept = delete;
+        NoMove& operator=(NoMove&&) noexcept = delete;
+    };
 
 
 TRACER_END

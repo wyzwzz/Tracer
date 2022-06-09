@@ -19,20 +19,45 @@
 TRACER_BEGIN
 
 namespace bdpt{
-    enum class VertexType{
-        Camera,
-        AreaLight,
-        EnvLight,
-        Surface,
-        Medium
+    enum class VertexType:int{
+        Camera = 1,
+        AreaLight = 2,
+        EnvLight = 3,
+        Surface = 4,
+        Medium = 5
     };
 
 
     class Vertex{
     public:
         Vertex(){}
+        Vertex(const Vertex& v){
+            type = v.type;
+            accu_coef = v.accu_coef;
+            pdf_fwd = v.pdf_fwd;
+            pdf_bwd = v.pdf_bwd;
+            is_delta = v.is_delta;
+            medium_p = v.medium_p;
+            surface_p = v.surface_p;
+            camera_p = v.camera_p;
+            area_light_p = v.area_light_p;
+            medium_p = v.medium_p;
+        }
+        Vertex& operator=(const Vertex& v){
+            type = v.type;
+            accu_coef = v.accu_coef;
+            pdf_fwd = v.pdf_fwd;
+            pdf_bwd = v.pdf_bwd;
+            is_delta = v.is_delta;
+            medium_p = v.medium_p;
+            surface_p = v.surface_p;
+            camera_p = v.camera_p;
+            area_light_p = v.area_light_p;
+            medium_p = v.medium_p;
 
-        VertexType type;
+            return *this;
+        }
+        VertexType type = static_cast<VertexType>(0);
         Spectrum accu_coef;
         //pdf_fwd in Camera Sub-path Vertex is not the same with in Light Sub-path
         real pdf_fwd = 0;//pdf per unit area from prev vertex to this vertex along camera to light
@@ -43,7 +68,7 @@ namespace bdpt{
 
         struct SurfacePoint{
             Point3f pos;
-            Normal3f n;
+            Normal3f n;//geometry normal
             Point2f uv;
             Vector3f wo;
             const BSDF* bsdf = nullptr;
@@ -68,8 +93,8 @@ namespace bdpt{
             Vector3f light_to_ref;
         };
         union{
-            SurfacePoint surface_p;
             MediumPoint medium_p;
+            SurfacePoint surface_p;
             CameraPoint camera_p;
             AreaLightPoint area_light_p;
             EnvLightPoint env_light_p;
@@ -85,7 +110,17 @@ namespace bdpt{
             return v.medium_p.phase;
         }
         else{
-            assert(false);
+            LOG_CRITICAL("get_scattering_bsdf error");
+            if(v.type == VertexType::AreaLight){
+                LOG_CRITICAL("area light");
+            }
+            else if(v.type == VertexType::Camera){
+                LOG_CRITICAL("camera");
+            }
+            else if(v.type == VertexType::EnvLight){
+                LOG_CRITICAL("env");
+            }
+            return nullptr;
         }
     }
     Vector3f get_scattering_wo(const Vertex& v){
@@ -96,7 +131,17 @@ namespace bdpt{
             return v.medium_p.wo;
         }
         else{
-            assert(false);
+            LOG_CRITICAL("get_scattering_wo error");
+            if(v.type == VertexType::AreaLight){
+                LOG_CRITICAL("area light");
+            }
+            else if(v.type == VertexType::Camera){
+                LOG_CRITICAL("camera");
+            }
+            else if(v.type == VertexType::EnvLight){
+                LOG_CRITICAL("env");
+            }
+            return {};
         }
     }
 
@@ -108,7 +153,18 @@ namespace bdpt{
             return v.medium_p.pos;
         }
         else{
-            assert(false);
+            LOG_CRITICAL("get_scattering_pos error");
+            if(v.type == VertexType::AreaLight){
+                LOG_CRITICAL("area light");
+            }
+            else if(v.type == VertexType::Camera){
+                LOG_CRITICAL("camera");
+            }
+            else if(v.type == VertexType::EnvLight){
+                LOG_CRITICAL("env");
+            }
+
+            return {};
         }
     }
 
@@ -126,11 +182,12 @@ namespace bdpt{
         Vertex v;
         v.type = VertexType::Surface;
         v.surface_p.pos = isect.pos;
-        v.surface_p.n = isect.shading.n;
+        v.surface_p.n = (Normal3f)isect.geometry_coord.z;
         v.surface_p.uv = isect.uv;
         v.surface_p.wo = isect.wo;
         v.surface_p.bsdf = bsdf;
         v.surface_p.primitive = isect.primitive;
+
         return v;
     }
     Vertex create_medium_vertex(){
@@ -181,6 +238,7 @@ namespace bdpt{
                 return 0;
             }
             default:
+                LOG_CRITICAL("invalid type");
                 assert(false);
                 return 0;
         }
@@ -205,29 +263,34 @@ namespace bdpt{
             case VertexType::EnvLight:
                 from_to_dir = -to.env_light_p.light_to_ref;
                 break;
+            default:
+                LOG_CRITICAL("invalid type");
         }
+        from_to_dir = normalize(from_to_dir);
         real pdf_sa = get_scattering_bsdf(from)->pdf(
                 from_to_dir, get_scattering_wo(from));
 
         return pdf_solid_angle_to_area(pdf_sa,from_pos,to);
     }
 
-    real correct_shading_normal(const SurfaceIntersection& isect,const Vector3f& wo,const Vector3f& wi,
-                                TransportMode mode){
-        if(mode == TransportMode::Importance){
-            real num = abs_dot(wo,isect.shading.n) * abs_dot(wi,isect.n);
-            real denom = abs_dot(wo,isect.n) * abs_dot(wi,isect.shading.n);
-            if(denom == 0) return 0;
-            return num / denom;
-        }
-        else
-            return 1;
-    }
+//    real correct_shading_normal(const SurfaceIntersection& isect,const Vector3f& wo,const Vector3f& wi,
+//                                TransportMode mode){
+//        if(mode == TransportMode::Importance){
+////            LOG_CRITICAL("importance");
+//            real num = abs_dot(wo,isect.shading.n) * abs_dot(wi,isect.n);
+//            real denom = abs_dot(wo,isect.n) * abs_dot(wi,isect.shading.n);
+//            if(denom == 0) return 0;
+//            return num / denom;
+//        }
+//        else
+//            return 1;
+//    }
 
     int generate_camera_subpath(const Scene& scene,Sampler& sampler,MemoryArena& arena,
                                 const Ray& ray,Vertex* v_path,int v_max_cnt)
     {
         auto camera = scene.get_camera();
+        //evaluate ray weight for camera and pdf
         const auto camera_we_ret = camera->eval_we(ray.o,ray.d);
         const auto camera_pdf_ret = camera->pdf_we(ray.o,ray.d);
         auto& camera_v = v_path[0];
@@ -267,7 +330,7 @@ namespace bdpt{
                 SurfaceShadingPoint shd_p = isect.material->shading(isect,arena);
                 assert(shd_p.bsdf);
                 //add surface vertex
-                const real cos_isect = abs_dot(isect.shading.n,isect.wo);
+                const real cos_isect = abs_cos(isect.geometry_coord.z,isect.wo);
                 const real dist2 = distance_squared(r.o,isect.pos);
                 const real pdf_area = pdf_fwd * cos_isect / dist2;
                 auto& new_v = v_path[vertex_count++];
@@ -278,7 +341,7 @@ namespace bdpt{
 
                 //sample bsdf
                 //todo add transmode
-                auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,sampler.sample3());
+                auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,TransportMode::Radiance,sampler.sample3());
                 if(!bsdf_sample_ret.is_valid())
                     break;
 
@@ -287,9 +350,8 @@ namespace bdpt{
                 auto prev_v = v_path[vertex_count - 2];
                 prev_v.pdf_bwd = pdf_solid_angle_to_area(pdf_bwd,isect.pos,prev_v);
 
-                accu_coef *= bsdf_sample_ret.f * abs_dot(bsdf_sample_ret.wi,isect.shading.n) / bsdf_sample_ret.pdf;
-                //todo ???
-                accu_coef *= correct_shading_normal(isect,isect.wo,bsdf_sample_ret.wi,TransportMode::Radiance);
+                accu_coef *= bsdf_sample_ret.f * abs_cos(bsdf_sample_ret.wi,isect.geometry_coord.z) / bsdf_sample_ret.pdf;
+
                 pdf_fwd = bsdf_sample_ret.pdf;
                 r = Ray(isect.eps_offset(bsdf_sample_ret.wi),bsdf_sample_ret.wi);
             }
@@ -306,6 +368,7 @@ namespace bdpt{
         const auto light = scene.lights[light_idx];
         //sample light emit
         const auto light_emit_ret = light->sample_le(sampler.sample5());
+//        LOG_INFO("light index: {}, pdf: {}, pos: {} {} {}",light_idx,light_pdf,light_emit_ret.pos.x,light_emit_ret.pos.y,light_emit_ret.pos.z);
         if(!light_emit_ret.radiance){
             return 0;
         }
@@ -354,7 +417,7 @@ namespace bdpt{
                 SurfaceShadingPoint shd_p = isect.material->shading(isect,arena);
                 assert(shd_p.bsdf);
                 //add surface vertex
-                const real cos_isect = abs_dot(isect.shading.n,isect.wo);
+                const real cos_isect = abs_cos(isect.geometry_coord.z,isect.wo);
                 const real dist2 = distance_squared(r.o,isect.pos);
                 const real pdf_area = pdf_bwd * cos_isect / dist2;
                 auto& new_v = v_path[vertex_count++];
@@ -365,7 +428,7 @@ namespace bdpt{
 
                 //sample bsdf
                 //todo add transmode
-                auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,sampler.sample3());
+                auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,TransportMode::Importance,sampler.sample3());
                 if(!bsdf_sample_ret.is_valid())
                     break;
 
@@ -374,9 +437,8 @@ namespace bdpt{
                 auto prev_v = v_path[vertex_count - 2];
                 prev_v.pdf_fwd = pdf_solid_angle_to_area(pdf_fwd,isect.pos,prev_v);
 
-                accu_coef *= bsdf_sample_ret.f * abs_dot(bsdf_sample_ret.wi,isect.shading.n) / bsdf_sample_ret.pdf;
-                //todo ???
-                accu_coef *= correct_shading_normal(isect,isect.wo,bsdf_sample_ret.wi,TransportMode::Importance);
+                accu_coef *= bsdf_sample_ret.f * abs_cos(bsdf_sample_ret.wi,isect.geometry_coord.z) / bsdf_sample_ret.pdf;
+
                 pdf_bwd = bsdf_sample_ret.pdf;
                 r = Ray(isect.eps_offset(bsdf_sample_ret.wi),bsdf_sample_ret.wi);
             }
@@ -390,6 +452,7 @@ namespace bdpt{
 
     Spectrum connect_bdpt_path()
     {
+        //todo
         NOT_IMPL
         return {};
     }
@@ -430,7 +493,9 @@ namespace bdpt{
 
 class BDPTRenderer: public Renderer{
 public:
-    BDPTRenderer(const BDPTRendererParams& params): params(params){}
+    BDPTRenderer(const BDPTRendererParams& params): params(params){
+        assert(params.max_camera_vertex_count >= 1 && params.max_light_vertex_count >= 0);
+    }
 
     RenderTarget render(const Scene& scene,Film film) override;
 
@@ -448,7 +513,9 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
     for(int i = 0; i < scene.lights.size(); ++i){
         light_index[scene.lights[i]] = i;
     }
+
     auto scene_camera = scene.get_camera();
+
     auto sampler_prototype = newBox<SimpleUniformSampler>(42, false);
 
     const int thread_count = actual_worker_count(params.worker_count);
@@ -457,9 +524,13 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
 
     const int film_width = film.width();
     const int film_height = film.height();
+
     SplatImage splat_image(film_width,film_height);
+
     const auto film_bounds = film.get_film_bounds();
+
     const int spp = params.spp;
+
     parallel_for_2d(thread_count,film_width,film_height,params.task_tile_size,params.task_tile_size,
                     [&](int thread_index,const Bounds2i& tile_bounds)
     {
@@ -474,6 +545,10 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
             for(int i = 0; i < spp; ++i){
                 const Sample2 film_sample = sampler->sample2();
                 const Sample2 lens_sample = sampler->sample2();
+                const Point2f pixel_coord = {
+                        (pixel.x + film_sample.u),
+                        (pixel.y + film_sample.v)
+                };
                 const Point2f film_coord = {
                         (pixel.x + film_sample.u) / film_width,
                         (pixel.y + film_sample.v) / film_height
@@ -481,21 +556,24 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                 CameraSample camera_sample{film_coord,{lens_sample.u,lens_sample.v}};
                 Ray ray;
                 const auto ray_weight = scene_camera->generate_ray(camera_sample,ray);
+                assert(ray_weight == 1);
 
                 //reused for every pixel spp
-                auto camera_subpath = arena.alloc<bdpt::Vertex>(params.max_camera_vertex_count + 2);
-                auto light_subpath = arena.alloc<bdpt::Vertex>(params.max_light_vertex_count + 1);
-
+                auto camera_subpath = arena.alloc<bdpt::Vertex>(params.max_camera_vertex_count);
+                auto light_subpath = arena.alloc<bdpt::Vertex>(params.max_light_vertex_count);
+//                if(pixel.x == 524 && pixel.y == 405){
+//                    LOG_INFO("find");
+//                }
                 int camera_subpath_count = bdpt::generate_camera_subpath(scene,*sampler,arena,ray,
                                                                    camera_subpath,
-                                                                   params.max_camera_vertex_count + 2);
+                                                                   params.max_camera_vertex_count);
 
 
 
                 //todo create light distribution
                 int light_subpath_count = bdpt::generate_light_subpath(scene,*sampler,arena,*scene_light_distribution,
                                                                        light_subpath,
-                                                                       params.max_light_vertex_count + 1);
+                                                                       params.max_light_vertex_count);
 
                 Spectrum L(0);
                 for(int t = 1; t <= camera_subpath_count; ++t){
@@ -510,7 +588,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                         }
 
                         if(t == 2 && s == 0){
-                            //todo no mis ???
+//                            //just see direct area or env light illumination
                             const auto& camera_beg = camera_subpath[0];
                             const auto& camera_end = camera_subpath[1];
                             //env light
@@ -522,25 +600,30 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                                                 );
                             }
                             else{
-                                if(camera_end.type != bdpt::VertexType::Medium
+                                if(camera_end.type == bdpt::VertexType::Surface
                                 && camera_end.surface_p.primitive->as_area_light()){
+                                    // diffuse light
+
                                     Ld = camera_end.accu_coef *
                                             camera_end.surface_p.primitive->as_area_light()->light_emit(
                                                     camera_end.surface_p.pos,camera_end.surface_p.n,
                                                     camera_end.surface_p.uv,
                                                     camera_beg.camera_p.pos - camera_end.surface_p.pos
                                                     );
+
                                 }
                             }
                             L += Ld;
                             continue;
                         }
-
+                        Ld = Spectrum(0);
+                        Point2f t1_pixel_coord;
                         if(s == 0){
                             //just consider camera subpath as a complate path
                             //equal to path tracing
                             //camera subpath: [ ...... , a , b ]
                             //only valid if b is light
+                            assert(t > 2);
                             const bdpt::Vertex& a = camera_subpath[t - 2];
                             const bdpt::Vertex& b = camera_subpath[t - 1];
                             const Point3f a_pos = a.type == bdpt::VertexType::Surface ?
@@ -557,11 +640,12 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                                     Ld *= b.accu_coef;
                                 }
                             }
+
                         }
                         else if(t == 1){
                             //only one point on the camera lens connect to the light subpath
                             //sample a point on camera and connect it to the light path
-
+                            assert(s >= 2);
                             auto& light_end = light_subpath[s - 1];
                             const Point3f light_end_pos = light_end.type == bdpt::VertexType::Surface ?
                                     light_end.surface_p.pos : light_end.medium_p.pos;
@@ -574,12 +658,13 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                                 continue;
                             }
 
-                            Point2f pixel_coord = {
+                            Point2f _pixel_coord = {
                                     camera_we.film_coord.x * film_width,
                                     camera_we.film_coord.y * film_height
                             };
 
-                            if(!inside(pixel_coord,(Bounds2f)film_bounds)){
+                            t1_pixel_coord = _pixel_coord;
+                            if(!inside(_pixel_coord,(Bounds2f)film_bounds)){
                                 continue;
                             }
                             if(!scene.visible(camera_pos,light_end_pos)){
@@ -589,7 +674,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                             Vector3f light_to_camera = normalize(camera_pos - light_end_pos);
                             const BSDF* bsdf = bdpt::get_scattering_bsdf(light_end);
                             const Spectrum f = bsdf->eval(
-                                    light_to_camera,bdpt::get_scattering_wo(light_end)
+                                    light_to_camera,bdpt::get_scattering_wo(light_end),TransportMode::Importance
                                     );
                             if(!f){
                                 continue;
@@ -605,10 +690,12 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                             //todo handle medium tr
 
                             //evaluate contribution
-                            L = camera_we.we * G * f * light_end.accu_coef
+                            Ld = camera_we.we * G * f * light_end.accu_coef
                                     / camera_subpath[0].pdf_fwd;
                         }
                         else if(s == 1){
+                            assert( t >= 2);
+                            //path tracing
                             //only one point on the light
                             //sample a point on light and connect it to the camera path
                             auto& camera_end = camera_subpath[t - 1];
@@ -616,6 +703,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                             if(camera_end.type == bdpt::VertexType::EnvLight){
                                 continue;
                             }
+
                             const Point3f camera_end_pos = camera_end.type == bdpt::VertexType::Surface ?
                                     camera_end.surface_p.pos : camera_end.medium_p.pos;
                             const auto& light_v = light_subpath[0];
@@ -624,7 +712,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                                     continue;
                                 }
 
-                                Vector3f camera_to_light = light_v.area_light_p.pos - camera_end_pos;
+                                Vector3f camera_to_light = normalize(light_v.area_light_p.pos - camera_end_pos);
                                 Spectrum light_radiance = light_v.area_light_p.light->light_emit(
                                         light_v.area_light_p.pos,
                                         light_v.area_light_p.n,
@@ -633,27 +721,31 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                                         );
 
                                 auto bsdf = bdpt::get_scattering_bsdf(camera_end);
+
                                 //todo add transport mode
                                 Spectrum bsdf_f = bsdf->eval(camera_to_light,
-                                                             bdpt::get_scattering_wo(camera_end));
+                                                             bdpt::get_scattering_wo(camera_end),TransportMode::Radiance);
 
                                 //todo handle medium tr
 
 
                                 if(camera_end.type == bdpt::VertexType::Surface){
-                                    //???
                                     bsdf_f *= abs_dot(camera_end.surface_p.n, normalize(camera_to_light));
                                 }
 
-                                bsdf_f *= abs_dot(light_v.area_light_p.n, normalize(camera_to_light));
+                                bsdf_f *= abs_dot(light_v.area_light_p.n, -normalize(camera_to_light));
 
                                 Ld = camera_end.accu_coef * bsdf_f * light_radiance
                                         / distance_squared(camera_end_pos,light_v.area_light_p.pos)
                                         / light_v.pdf_bwd;
+
+//                                auto t = camera_end.surface_p.ng;
+//                                auto t = normalize(camera_to_light);
+//                                Ld = Spectrum(t.x * 0.5 + 0.5,t.y * 0.5 + 0.5,t.z * 0.5 + 0.5);
                             }
                             else{
                                 assert(light_v.type == bdpt::VertexType::EnvLight);
-
+                                LOG_CRITICAL("NOT IMPL");
                                 Vector3f camera_to_light = normalize(-light_v.env_light_p.light_to_ref);
 
                                 Ray shadow_ray(camera_end_pos,camera_to_light,eps);
@@ -665,7 +757,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                                 auto bsdf = bdpt::get_scattering_bsdf(camera_end);
                                 Spectrum bsdf_f = bsdf->eval(
                                         camera_to_light,
-                                        bdpt::get_scattering_wo(camera_end)
+                                        bdpt::get_scattering_wo(camera_end),TransportMode::Radiance
                                         );
 
                                 if(camera_end.type == bdpt::VertexType::Surface){
@@ -675,6 +767,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                             }
                         }
                         else{
+                            assert(s >= 2 && t >= 2);
                             const auto& camera_end = camera_subpath[t - 1];
                             const auto& light_end = light_subpath[s - 1];
                             if(camera_end.type == bdpt::VertexType::EnvLight){
@@ -689,17 +782,24 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                             //evaluate bsdf
                             Vector3f camera_to_light = normalize(light_end_pos - camera_end_pos);
                             const auto camera_end_bsdf = bdpt::get_scattering_bsdf(camera_end);
+                            if(camera_end_bsdf == nullptr){
+                                LOG_CRITICAL("camera_end_bsdf is nullptr");
+                            }
                             Spectrum camera_bsdf_f = camera_end_bsdf->eval(
-                                    camera_to_light,bdpt::get_scattering_wo(camera_end)
+                                    camera_to_light,bdpt::get_scattering_wo(camera_end),TransportMode::Radiance
                                     );
                             if(!camera_bsdf_f){
                                 continue;
                             }
 
                             const auto light_end_bsdf = bdpt::get_scattering_bsdf(light_end);
+                            if(light_end_bsdf == nullptr){
+                                LOG_CRITICAL("light_end_bsdf is nullptr");
+                            }
                             Spectrum light_bsdf_f = light_end_bsdf->eval(
-                                    -camera_to_light,bdpt::get_scattering_wo(light_end)
+                                    -camera_to_light,bdpt::get_scattering_wo(light_end),TransportMode::Importance
                                     );
+
                             if(!light_bsdf_f){
                                 continue;
                             }
@@ -753,7 +853,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                             return 1 / sum_pdf;
 
                         };
-                        real mis_weight = 0;
+                        real mis_weight = 1;
                         if(s == 0){
                             assert( t > 2);
                             // ... , a , b
@@ -816,7 +916,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                             ScopedAssignment<real> scope_c_pdf_fwd;
 
                             if(c.type == bdpt::VertexType::AreaLight){
-                                const Vector3f b_to_c = c.area_light_p.pos - b_pos;
+                                const Vector3f b_to_c = normalize(c.area_light_p.pos - b_pos);
 
                                 const auto emit_pdf = c.area_light_p.light->emit_pdf(
                                         c.area_light_p.pos,-b_to_c,(Vector3f)c.area_light_p.n);
@@ -838,7 +938,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                             }
                             else{
                                 assert(c.type == bdpt::VertexType::EnvLight);
-                                Vector3f b_to_c = - c.env_light_p.light_to_ref;
+                                Vector3f b_to_c = - normalize(c.env_light_p.light_to_ref);
                                 auto emit_pdf = scene.environment_light->emit_pdf({},c.env_light_p.light_to_ref,{});
                                 scope_b_pdf_bwd = {
                                         &b.pdf_bwd,
@@ -867,7 +967,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                             Point3f b_pos = bdpt::get_scattering_pos(b);
 
                             auto camera_we_ret = scene.get_camera()->pdf_we(
-                                    a.camera_p.pos,b_pos - a.camera_p.pos);
+                                    a.camera_p.pos,normalize(b_pos - a.camera_p.pos));
                             if(camera_we_ret.pdf_pos <= 0 || camera_we_ret.pdf_dir <= 0){
                                 mis_weight = 0;
                             }
@@ -876,7 +976,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                                 camera_v.accu_coef = Spectrum(1);
                                 camera_v.is_delta = false;
                                 camera_v.pdf_fwd = camera_we_ret.pdf_pos;
-                                camera_v.pdf_fwd = bdpt::pdf_from_to(b,camera_v);
+                                camera_v.pdf_bwd = bdpt::pdf_from_to(b,camera_v);
 
                                 ScopedAssignment<real> scope_b_pdf_fwd = {
                                         &b.pdf_fwd,
@@ -884,7 +984,7 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                                 };
 
                                 const real c_pdf_fwd_sa = bdpt::get_scattering_bsdf(b)->pdf(
-                                        bdpt::get_scattering_wo(b),a.camera_p.pos - b_pos);
+                                        bdpt::get_scattering_wo(b),normalize(a.camera_p.pos - b_pos));
                                 const real c_pdf_fwd = bdpt::pdf_solid_angle_to_area(c_pdf_fwd_sa,b_pos,c);
 
                                 ScopedAssignment<real> scope_c_pdf_fwd = {
@@ -895,16 +995,21 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                             }
                         }
                         else{
-                            auto &a = camera_subpath[s - 2];
-                            auto &b = camera_subpath[s - 1];
-                            auto &c = light_subpath[t - 1];
-                            auto &d = light_subpath[t - 2];
+                            auto &a = camera_subpath[t - 2];
+                            auto &b = camera_subpath[t - 1];
+                            auto &c = light_subpath[s - 1];
+                            auto &d = light_subpath[s - 2];
 
                             const Point3f b_pos = bdpt::get_scattering_pos(b);
                             const Point3f c_pos = bdpt::get_scattering_pos(c);
 
                             const BSDF* b_bsdf = bdpt::get_scattering_bsdf(b);
+
                             const BSDF* c_bsdf = bdpt::get_scattering_bsdf(c);
+
+                            if(!b_bsdf || !c_bsdf){
+                                LOG_CRITICAL("bsdf get nullptr");
+                            }
 
                             const Vector3f b_to_c = normalize(c_pos - b_pos);
                             // [ ... , a , b ] --- [ ... , c , d ]
@@ -942,15 +1047,20 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                         Ld *= mis_weight;
 
                         if(t == 1){
-                            const real weight = film.get_filter()->eval(film_sample.u,film_sample.v);
-                            splat_image.at(pixel.x,pixel.y).add(weight * Ld);
+                            const real weight = film.get_filter()->eval(
+                                    t1_pixel_coord.x - std::floor(t1_pixel_coord.x),
+                                    t1_pixel_coord.y - std::floor(t1_pixel_coord.y));
+                            //todo weight is useless?
+                            //add Ld to splat image because this Ld is not belong to this tile pixel
+                            splat_image.at(std::min<int>(film_width - 1,std::floor(t1_pixel_coord.x)),std::min<int>(film_height - 1,std::floor(t1_pixel_coord.y))).add(weight * Ld);
                         }
                         else{
                             L += Ld;
                         }
-                    }
-                }
-                film_tile->add_sample(film_coord,L);
+
+                    }//end of loop s
+                }//end of loop t
+                film_tile->add_sample(pixel_coord,L);
 
                 arena.reset();
             }

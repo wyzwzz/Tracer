@@ -15,6 +15,7 @@ class PathTraceRenderer:public PixelSamplerRenderer{
     int min_depth = 5;
     int max_depth = 10;
     int direct_light_sample_num = 1;
+    int max_specular_depth = 20;
 public:
     PathTraceRenderer(const PTRendererParams& params)
     : PixelSamplerRenderer(params.worker_count,params.task_tile_size,params.spp),
@@ -27,7 +28,7 @@ public:
             if (scene.intersect_p(r, &isect)) {
                 auto color = isect.material->evaluate(isect.uv);
                 return color;
-                auto n = isect.shading.n;
+                auto n = isect.shading_coord.z;
                 return Spectrum(n.x + 1,n.y + 1,n.z + 1) * 0.5f;
             } else
                 return Spectrum(0.0, 0.0, 0.0);
@@ -38,7 +39,7 @@ public:
         Spectrum L(0);
         bool specular_sample = false;
 
-        for(int depth = 0; depth < max_depth; ++depth){
+        for(int depth = 0, s_depth = 0; depth < max_depth; ++depth){
             if(!coef.is_finite()){
                 LOG_CRITICAL("coef get infinite");
                 break;
@@ -87,7 +88,7 @@ public:
 
 
             //sample bsdf to get new path direction
-            auto bsdf_sample = shading_p.bsdf->sample(isect.wo,sampler.sample3());
+            auto bsdf_sample = shading_p.bsdf->sample(isect.wo,TransportMode::Radiance,sampler.sample3());
 
 
 
@@ -99,13 +100,13 @@ public:
 
             //set specular flag for next bounce ray
             specular_sample = bsdf_sample.is_delta;//todo reduce depth due to specular sample ?
-            if(specular_sample){
+            if(specular_sample && s_depth < max_specular_depth){
+                s_depth++;
                 depth--;
             }
             //todo handle refract?
 
-            const real abscos = abs_dot(isect.shading.n,bsdf_sample.wi);
-            coef *= bsdf_sample.f * abscos / bsdf_sample.pdf;
+            coef *= bsdf_sample.f * abs_cos(isect.geometry_coord.z,bsdf_sample.wi) / bsdf_sample.pdf;
 
              ray = Ray(isect.eps_offset(bsdf_sample.wi),
                      normalize(bsdf_sample.wi));

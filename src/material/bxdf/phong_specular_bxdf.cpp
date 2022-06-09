@@ -27,7 +27,7 @@ TRACER_BEGIN
 
     }
 
-    Spectrum PhongSpecularBXDF::evaluate(const Vector3f& lwi,const Vector3f& lwo) const{
+    Spectrum PhongSpecularBXDF::evaluate(const Vector3f& lwi,const Vector3f& lwo,TransportMode mode) const{
         if(lwi.z <= 0 || lwo.z <= 0)
             return {};
         const Vector3f ideal_lwi = reflect(lwo,Vector3f(0,0,1));
@@ -44,28 +44,26 @@ TRACER_BEGIN
             return 0;
         const Vector3f ideal_lwi = reflect(lwo,{0,0,1});
         //compute cos theta for ideal_lwi and lwi
-        const real cos_theta = dot(lwi,ideal_lwi) / (lwi.length() * ideal_lwi.length());
+        const real cos_theta = cos(lwi,ideal_lwi);
         if(cos_theta <= 0)
             return 0;
         return PowCosineSampleHemispherePdf(ns,cos_theta);
     }
 
-    BXDFSampleResult PhongSpecularBXDF::sample(const Vector3f& lwo,const Sample2& sample) const{
+    BXDFSampleResult PhongSpecularBXDF::sample(const Vector3f& lwo,TransportMode mode,const Sample2& sample) const{
         //all is in local coord
         if(lwo.z <= 0)
             return {};
         const Vector3f ideal_lwi = normalize(reflect(lwo,{0,0,1}));
         Vector3f local_lwi = PowCosineSampleHemisphere(ns,sample);
-//        local_lwi = Vector3f(0,0,1);
-        Vector3f x,y;
-        coordinate(ideal_lwi,x,y);
-        Vector3f lwi = local_lwi.z * ideal_lwi + local_lwi.x * x + local_lwi.y * y;
+
+        Vector3f lwi = Coord::create_from_z(ideal_lwi).local_to_global(local_lwi).normalize();
         if(lwi.z <= 0)
             return {};
 
         const real pdf = PowCosineSampleHemispherePdf(ns,local_lwi.z);//note!!!
         BXDFSampleResult ret;
-        ret.f = evaluate(lwi,lwo);
+        ret.f = evaluate(lwi,lwo,mode);
         ret.lwi = lwi;
         ret.pdf = pdf;
 //        LOG_INFO("sample specular pdf: {}, f: {} {} {}, specular: {} {} {}",pdf,ret.f.r,ret.f.g,ret.f.b,specular.r,specular.g,specular.b);

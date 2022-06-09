@@ -13,11 +13,11 @@ class PhongSpecularBXDF: public BXDF{
 public:
     PhongSpecularBXDF(const Spectrum& specular,real ns);
 
-    Spectrum evaluate(const Vector3f& wi,const Vector3f& wo) const override;
+    Spectrum evaluate(const Vector3f& wi,const Vector3f& wo, TransportMode mode) const override;
 
     real pdf(const Vector3f& wi,const Vector3f& wo) const override;
 
-    BXDFSampleResult sample(const Vector3f& wo,const Sample2& sample) const override;
+    BXDFSampleResult sample(const Vector3f& wo,TransportMode mode,const Sample2& sample) const override;
 
     bool has_diffuse() const override;
 

@@ -17,11 +17,11 @@ TRACER_BEGIN
 
         ~DiffuseBXDF() override = default;
 
-        Spectrum evaluate(const Vector3f& wi,const Vector3f& wo) const override;
+        Spectrum evaluate(const Vector3f& lwi,const Vector3f& lwo,TransportMode mode) const override;
 
-        real pdf(const Vector3f& wi,const Vector3f& wo) const override;
+        real pdf(const Vector3f& lwi,const Vector3f& lwo) const override;
 
-        BXDFSampleResult sample(const Vector3f& wo,const Sample2& sample) const override;
+        BXDFSampleResult sample(const Vector3f& lwo,TransportMode mode,const Sample2& sample) const override;
 
         bool has_diffuse() const override;
     };

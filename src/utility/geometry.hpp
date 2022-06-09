@@ -444,6 +444,8 @@ namespace tracer {
         double length_squared() const { return x * x + y * y + z * z; }
         double length() const { return std::sqrt(length_squared()); }
 
+        Vector3<T> normalize() const ;
+
         // Vector3 Public Data
         T x, y, z;
     };
@@ -567,6 +569,11 @@ namespace tracer {
     template <typename T>
     inline Vector3<T> normalize(const Vector3<T> &v) {
         return v / v.length();
+    }
+
+    template<typename T>
+    Vector3<T> Vector3<T>::normalize() const {
+        return ::tracer::normalize(*this);
     }
 
     template <typename T>
@@ -917,6 +924,14 @@ namespace tracer {
     inline real spherical_phi(const Vector3f &v) {
         real p = std::atan2(v.y, v.x);
         return (p < 0) ? (p + 2 * PI_r) : p;
+    }
+
+    inline real cos(const Vector3f& w1,const Vector3f& w2){
+        return dot(w1,w2) / (w1.length() * w2.length());
+    }
+
+    inline real abs_cos(const Vector3f& w1,const Vector3f& w2){
+        return std::abs(cos(w1,w2));
     }
 
     template <typename T>

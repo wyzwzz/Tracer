@@ -11,14 +11,14 @@ TRACER_BEGIN
 
     }
 
-    Spectrum DiffuseBXDF::evaluate(const Vector3f &local_wi, const Vector3f &local_wo) const {
-        if(local_wi.z <= 0 || local_wo.z <= 0)
+    Spectrum DiffuseBXDF::evaluate(const Vector3f &lwi, const Vector3f &lwo,TransportMode mode) const {
+        if(lwi.z <= 0 || lwo.z <= 0)
             return {};
         return coef;
     }
 
-    BXDFSampleResult DiffuseBXDF::sample(const Vector3f &wo, const Sample2 &sample) const {
-        if(wo.z <= 0) return {};
+    BXDFSampleResult DiffuseBXDF::sample(const Vector3f &lwo,TransportMode mode, const Sample2 &sample) const {
+        if(lwo.z <= 0) return {};
         BXDFSampleResult ret;
         auto lwi = CosineSampleHemisphere(sample);
         auto pdf = CosineHemispherePdf(lwi.z);

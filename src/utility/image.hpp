@@ -6,7 +6,7 @@
 #define TRACER_IMAGE_HPP
 
 #include "common.hpp"
-
+#include "utility/logger.hpp"
 TRACER_BEGIN
 
     template<typename T>
@@ -58,6 +58,10 @@ TRACER_BEGIN
         }
 
         T& at(int x,int y) const{
+            if(x < 0 || x >= w || y < 0 || y >= h){
+                LOG_CRITICAL("invalid x y {} {}",x,y);
+                throw std::out_of_range("invalid x y");
+            }
             return data[x + y * w];
         }
 

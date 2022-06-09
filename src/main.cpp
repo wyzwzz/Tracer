@@ -37,10 +37,16 @@ struct RenderParams{
     std::string ibl_file_name;
 
 };
-PTRendererParams pt_params{18,16,1024,5,10,1};
+PTRendererParams pt_params{
+    .worker_count = 18,
+    .task_tile_size = 16,
+    .spp = 16,
+    .min_depth = 5,
+    .max_depth = 10,
+    .direct_light_sample_num = 1};
 
 SPPMRendererParams sppm_params{.init_search_radius = 0.25,
-                               .worker_count = 20,
+                               .worker_count = 18,
                                .iteration_count = 4096,
                                .photons_per_iteration = 120000,
                                .task_tile_size = 16,
@@ -49,6 +55,14 @@ SPPMRendererParams sppm_params{.init_search_radius = 0.25,
                                .photon_max_depth = 10,
                                .update_alpha = real(2)/3
                                 };
+
+BDPTRendererParams bdpt_params{
+    .worker_count = 18,
+    .task_tile_size = 16,
+    .max_camera_vertex_count = 10,
+    .max_light_vertex_count = 10,
+    .spp =  16
+};
 
 void run(const RenderParams& params){
     auto filter = create_gaussin_filter(params.filter.radius,params.filter.alpha);
@@ -123,7 +137,8 @@ void run(const RenderParams& params){
     scene->prepare_to_render();
     //create renderer
 //    auto renderer = create_pt_renderer(pt_params);
-    auto renderer = create_sppm_renderer(sppm_params);
+//    auto renderer = create_sppm_renderer(sppm_params);
+    auto renderer = create_bdpt_renderer(bdpt_params);
 
     AutoTimer timer("render","s");
     auto render_target = renderer->render(*scene.get(), Film({params.render_target_width, params.render_target_height}, filter));
@@ -145,7 +160,7 @@ void run(const RenderParams& params){
 }
 int main(int argc,char** argv){
     RenderParams bedroom = {
-        .render_result_name = "tracer_bedroom",
+        .render_result_name = "tracer_bedroom_pt_test",
         .filter = {.radius = 0.5,.alpha = 0.6},
         .render_target_width = 1280,
         .render_target_height = 720,
@@ -161,7 +176,7 @@ int main(int argc,char** argv){
     };
 
     RenderParams cornell_box = {
-        .render_result_name = "tracer_cornel-box",
+        .render_result_name = "tracer_cornel-box_bdpt",
         .filter = {.radius = 0.5,.alpha = 0.6},
         .render_target_width = 1024,
         .render_target_height = 1024,
@@ -192,7 +207,7 @@ int main(int argc,char** argv){
         .obj_file_name = "veach-mis.obj"
     };
     RenderParams diningroom = {
-            .render_result_name = "tracer_diningroom_sppm",
+            .render_result_name = "tracer_diningroom_bdpt_test",
             .filter = {.radius = 0.5,.alpha = 0.6},
             .render_target_width = 450,
             .render_target_height = 270,
@@ -208,7 +223,7 @@ int main(int argc,char** argv){
     };
 
     RenderParams cornellbox = {
-            .render_result_name = "tracer_cornellbox_sppm",
+            .render_result_name = "tracer_cornellbox_bdpt",
             .filter = {.radius = 0.5,.alpha = 0.6},
             .render_target_width = 600,
             .render_target_height = 600,

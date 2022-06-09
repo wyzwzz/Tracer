@@ -60,16 +60,38 @@ TRACER_BEGIN
 
         SurfacePoint sample(real* pdf,const Sample2& sam) const noexcept{
             auto b = UniformSampleTriangle(sam);
+            auto alpha = b.x;
+            auto beta = b.y;
             const auto& A = mesh->p[vertex[0]];
             const auto& B = mesh->p[vertex[1]];
             const auto& C = mesh->p[vertex[2]];
+            const auto AB = B - A;
+            const auto AC = C - A;
             const auto& uvA = mesh->uv[vertex[0]];
             const auto& uvB = mesh->uv[vertex[1]];
             const auto& uvC = mesh->uv[vertex[2]];
+            const auto nA = (Vector3f)mesh->n[vertex[0]].normalize();
+            const auto nB = (Vector3f)mesh->n[vertex[1]].normalize();
+            const auto nC = (Vector3f)mesh->n[vertex[2]].normalize();
             SurfacePoint sp;
             sp.pos = b.x * A + b.y * B + (1 - b.x - b.y) * C;
-            sp.n = Normal3f(normalize(cross(B-A,C-A)));
             sp.uv = b.x * uvA + b.y * uvB + (1 - b.x - b.y) * uvC;
+
+            //compute dpdu dpdv
+            Vector3f gn = cross(AB,AC).normalize();
+            Vector3f dpdu,dpdv;
+            compute_ss_ts(AB,AC,Vector2f(uvB - uvA),Vector2f(uvC-uvA),gn,dpdu,dpdv);
+            sp.geometry_coord = Coord(dpdu,dpdv,gn);
+
+            //compute dndu dndv
+            Vector3f sn = nA + alpha * (nB - nA) + beta * (nC - nA);
+            Vector3f dndu,dndv;
+            compute_ss_ts(nB-nA,nC-nA,Vector2f(uvB-uvA),Vector2f(uvC-uvA),sn,dndu,dndv);
+            if(dndu.length_squared() < eps || dndv.length_squared() < eps){
+                coordinate(sn,dndu,dndv);
+            }
+            sp.shading_coord = Coord(dndu,dndv,sn);
+
             *pdf = 1 / surface_area();
             return sp;
         }
@@ -171,52 +193,26 @@ TRACER_BEGIN
         const Vector3f nB = (Vector3f)mesh->n[vertex[1]].normalize();
         const Vector3f nC = (Vector3f)mesh->n[vertex[2]].normalize();
         //todo
-        isect->n = (Normal3f)normalize(cross(AB,AC));
+//        isect->n = (Normal3f)normalize(cross(AB,AC));
         isect->uv = uvA + alpha * (uvB - uvA) + beta * (uvC - uvA);
         isect->wo = -ray.d;
 
         isect->pos = ray(t);
 
-
-        auto compute_ss_ts = [&](const Vector3f& AB,const Vector3f& AC,
-                const Vector2f& ab,const Vector2f& ac,const Vector3f& n,
-                Vector3f& ss,Vector3f& ts){
-            const real m00 = ab.x, m01 = ab.y;
-            const real m10 = ac.x, m11 = ac.y;
-            const real det = m00 * m11 - m01 * m10;
-            if(det){
-                const real inv_det = 1 / det;
-                ss  = m11 * inv_det * AB - m01 * inv_det * AC;
-                ts = m10 * inv_det * AB - m00 * inv_det * AC;
-            }
-            else{
-                coordinate(n,ss,ts);
-            }
-        };
         //compute dpdu dpdv
-        compute_ss_ts(AB,AC,Vector2f(uvB - uvA),Vector2f(uvC-uvA),(Vector3f)isect->n,isect->dpdu,isect->dpdv);
+        Vector3f gn = cross(AB,AC).normalize();
+        Vector3f dpdu,dpdv;
+        compute_ss_ts(AB,AC,Vector2f(uvB - uvA),Vector2f(uvC-uvA),gn,dpdu,dpdv);
+        isect->geometry_coord = Coord(dpdu,dpdv,gn);
 
         //compute dndu dndv
-        compute_ss_ts(nB-nA,nC-nA,Vector2f(uvB-uvA),Vector2f(uvC-uvA),(Vector3f)isect->n,isect->dndu,isect->dndv);
-        if(isect->dndu.length_squared() < eps || isect->dndv.length_squared() < eps){
-            coordinate((Vector3f)isect->n,isect->dndu,isect->dndv);
+        Vector3f sn = nA + alpha * (nB - nA) + beta * (nC - nA);
+        Vector3f dndu,dndv;
+        compute_ss_ts(nB-nA,nC-nA,Vector2f(uvB-uvA),Vector2f(uvC-uvA),sn,dndu,dndv);
+        if(dndu.length_squared() < eps || dndv.length_squared() < eps){
+            coordinate(sn,dndu,dndv);
         }
-
-        auto ns = Normal3f(nA + alpha * (nB - nA) + beta * (nC - nA)).normalize();
-        auto ss = normalize(isect->dpdu);
-        auto ts = cross(ss,(Vector3f)ns);//todo ???
-        if(ts.length_squared() > 0){
-            ts = normalize(ts);
-            ss = cross(ts,(Vector3f)ns);
-        }
-        else
-            coordinate((Vector3f)ns,ss,ts);
-
-        compute_ss_ts(nB-nA,nC-nA,Vector2f(uvB-uvA),Vector2f(uvC-uvA),(Vector3f)ns,isect->shading.dndu,isect->shading.dndv);
-
-        isect->shading.dpdu = ss;
-        isect->shading.dpdv = ts;
-        isect->shading.n = (Normal3f)normalize(cross(ss,ts));
+        isect->shading_coord = Coord(dndu,dndv,sn);
 
         return true;
     }

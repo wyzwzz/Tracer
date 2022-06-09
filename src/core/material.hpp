@@ -11,10 +11,7 @@
 #include "core/intersection.hpp"
 TRACER_BEGIN
 
-enum class TransportMode{
-    Radiance,
-    Importance
-};
+
 
 class Material{
 public:

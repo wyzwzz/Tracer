@@ -3,6 +3,7 @@
 //
 #include "core/light.hpp"
 #include "core/texture.hpp"
+#include "core/sampling.hpp"
 #include "utility/parallel.hpp"
 #include "utility/image.hpp"
 #include "utility/timer.hpp"
@@ -114,14 +115,59 @@ TRACER_BEGIN
 
 
 
-        LightEmitResult sample_le(const Sample5&) const override{
-            NOT_IMPL
-            return {};
+        LightEmitResult sample_le(const Sample5& sample) const override{
+            real map_pdf;
+            auto [u,v] = distrib->sample_continuous(sample.u,sample.v,&map_pdf);
+            if(map_pdf == 0) return {};
+            real theta = v * PI_r;
+            real phi = u * 2 * PI_r;
+            real cos_theta = std::cos(theta);
+            real sin_theta = std::sin(theta);
+            real sin_phi = std::sin(phi);
+            real cos_phi = std::cos(phi);
+            auto light_to_world = inverse(world_to_light);
+            Vector3f wi = {sin_theta * cos_phi,sin_theta * sin_phi,cos_theta};
+            wi = normalize(light_to_world(wi));
+            if(sin_theta == 0)
+                return {};
+            //g(u,v) = (PI*v,2PI*u) -> (theta,phi)
+            //p(theta,phi) = p(u,v) / (2 * PI * PI(
+            //p(wi) = p(theta,phi) / sin_theta = p(u,v) / (2 * PI * PI * sin_theta)
+            real pdf = map_pdf / ( 2 * PI_r * PI_r * sin_theta);//Jacobian
+
+            Vector3f s,t;
+            coordinate((Vector3f)wi,s,t);
+            auto disk_sample = ConcentricSampleDisk({sample.r,sample.s});
+            auto pos = world_center + (disk_sample.x * s + disk_sample.y * t - wi) * world_radius;
+
+            LightEmitResult ret;
+            ret.pos = pos;
+            ret.dir = -wi;
+            ret.n = (Normal3f)-wi;
+            ret.uv = {};
+            ret.radiance = light_emit(world_center,-wi);
+            ret.pdf_dir = pdf;
+            ret.pdf_pos = invPI_r / (world_radius * world_radius);
+            return ret;
         }
 
         LightEmitPdfResult emit_pdf(const Point3f& ref,const Vector3f& dir,const Vector3f& n) const noexcept override{
-            NOT_IMPL
-            return {};
+            Vector3f local_dir = world_to_light(dir);
+            local_dir = normalize(local_dir);
+            real cos_theta = local_dir.z;
+            real theta = std::acos(cos_theta);
+            real phi = local_phi(local_dir);
+            real u = phi * inv2PI_r;
+            real v = theta * invPI_r;
+            real sin_theta = std::sin(theta);
+            auto pdf_dir = distrib->pdf(u,v);
+            pdf_dir = pdf_dir / ( 2 * PI_r * PI_r * sin_theta);;
+            real pdf_pos = 1 * invPI_r / ( world_radius * world_radius);
+
+            LightEmitPdfResult ret;
+            ret.pdf_pos = pdf_pos;
+            ret.pdf_dir = pdf_dir;
+            return ret;
         }
 
 

@@ -36,6 +36,7 @@ struct RenderTarget{
             }
             void add_sample(const Point2f& pos,Spectrum li,real sample_weight = 1.0){
                 //todo check is li is infinite
+
                 Point2f discrete_pos = pos - Point2f(0.5,0.5);
                 Point2i p0 = (Point2i)ceil(discrete_pos - filter->radius());
                 Point2i p1 = (Point2i)floor(discrete_pos + filter->radius()) + Point2i(1,1);
@@ -106,6 +107,7 @@ struct RenderTarget{
             for(int y = 0; y < resolution.y; ++y){
                 for(int x = 0; x < resolution.x; ++x){
                     const auto& pixel = get_pixel({x,y});
+//                    LOG_INFO("write:{} {},{}, {} {} {}",x,y,pixel.weight,pixel.color.r,pixel.color.g,pixel.color.b );
                     if(pixel.weight > 0)
                         render_target.color.at(x,y) = pixel.color / pixel.weight;
                 }

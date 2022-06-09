@@ -39,6 +39,7 @@ TRACER_BEGIN
         T* target, backup;
     };
 
+    using TempAssign = ScopedAssignment<real>;
 
 
 TRACER_END

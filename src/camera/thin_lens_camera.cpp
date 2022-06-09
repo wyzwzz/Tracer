@@ -60,7 +60,7 @@ TRACER_BEGIN
 
         CameraEvalWeResult eval_we(const Point3f& pos_on_cam,const Vector3f& pos_to_out) const noexcept override{
             Point3f lens_pos = inverse(camera_to_world)(pos_on_cam);
-            Vector3f local_dir = normalize(inverse(camera_to_world)(pos_to_out));
+            Vector3f local_dir = normalize(inverse(camera_to_world)(normalize(pos_to_out)));
 
             if(local_dir.z <= 0){
                 return {};
@@ -83,15 +83,22 @@ TRACER_BEGIN
         }
 
         CameraPdfWeResult pdf_we(const Point3f& pos_on_cam,const Vector3f& pos_to_out) const noexcept override{
-            //todo
-            return {};
+            Vector3f local_dir = inverse(camera_to_world)(normalize(pos_to_out));
+
+            if(local_dir.z <= 0)
+                return { 1 / area_lens, 0};
+
+            real cos_theta = local_dir.z;
+            real pdf_dir = focal_distance * focal_distance / (area_focal_film * cos_theta * cos_theta * cos_theta);
+
+            return { 1 / area_lens, pdf_dir};
         }
 
         CameraSampleWiResult sample_wi(const Point3f& ref,const Sample2& sample) const noexcept override{
             Point3f local_ref = inverse(camera_to_world)(ref);
             //sample lens
             Point2f disk_pos = ConcentricSampleDisk(sample);
-            Point3f lens_pos = {disk_pos.x,disk_pos.y,0};
+            Point3f lens_pos = {disk_pos.x * lens_radius,disk_pos.y * lens_radius,0};
 
             Vector3f local_dir = normalize(local_ref - lens_pos);
             if(local_dir.z <= 0){

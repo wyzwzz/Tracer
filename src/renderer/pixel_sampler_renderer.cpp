@@ -27,6 +27,8 @@ TRACER_BEGIN
         const int film_width = film.width();
         const int film_height = film.height();
         const auto scene_camera = scene.get_camera();
+        const int total_pixels = film_width * film_height * spp;
+        std::atomic<int> finish_count = 0;
 
         auto sampler_prototype = newRC<SimpleUniformSampler>(42, false);
         PerThreadNativeSamplers perthread_sampler(
@@ -81,6 +83,11 @@ TRACER_BEGIN
 
                             }
                             arena.reset();
+                            finish_count++;
+                            int percent = finish_count % (total_pixels / 10);
+                            if( percent == 0){
+                                LOG_INFO("finish {}",finish_count * 1.0 / total_pixels);
+                            }
                         }
                     }
                     film.merge_film_tile(film_tile);

@@ -12,18 +12,17 @@
 TRACER_BEGIN
 
     template<int MAX_BXDF_COUNT>
-    class AggregateBSDF:public BSDF{
+    class AggregateBSDF:public LocalBSDF{
     private:
         real weights[MAX_BXDF_COUNT];//用于控制bxdf被选择的概率
         const BXDF* bxdfs[MAX_BXDF_COUNT];
         int bxdfs_count = 0;
 
-        const Normal3f ns,ng;
-        const Vector3f ss,ts;
+        Spectrum albedo;
     public:
 
-        AggregateBSDF(const SurfaceIntersection& isect)
-        :ng(normalize(isect.n)),ns(normalize(isect.shading.n)),ss(normalize(isect.shading.dpdu)),ts(normalize(isect.shading.dpdv))
+        AggregateBSDF(const Coord& g_coord,const Coord& s_coord,const Spectrum& albedo)
+        : LocalBSDF(g_coord,s_coord),albedo(albedo)
         {
 
         }
@@ -34,35 +33,30 @@ TRACER_BEGIN
             bxdfs[bxdfs_count++] = bxdf;
         }
 
-        Spectrum eval(const Vector3f& wi,const Vector3f& wo) const override{
-            //todo process black fringes
-
+        Spectrum eval(const Vector3f& wi,const Vector3f& wo,TransportMode mode) const override{
+            if(cause_black_fringes(wi,wo))
+                return evaluate_black_fringes(wi,wo);
             //transform to local coordinate
-            Vector3f lwi = Vector3f(dot(ss,wi),
-                                    dot(ts,wi),
-                                    dot(ns,wi));
-            Vector3f lwo = Vector3f(dot(ss,wo),
-                                    dot(ts,wo),
-                                    dot(ns,wo));
-            if(lwi.z <= 0 || lwo.z <= 0)
+            Vector3f lwi = shading_coord.global_to_local(wi).normalize();
+            Vector3f lwo = shading_coord.global_to_local(wo).normalize();
+            if(!lwi.z || !lwo.z)//negative is ok
                 return {};
 
             Spectrum ret;
             for(int i = 0; i < bxdfs_count; i++){
-                ret += bxdfs[i]->evaluate(lwi,lwo);
+                ret += bxdfs[i]->evaluate(lwi,lwo,mode);
             }
-
             return ret;
         }
 
-        BSDFSampleResult sample(const Vector3f& _wo,const Sample3& sample) const override{
-            //todo process black fringes
-
+        BSDFSampleResult sample(const Vector3f& wo,TransportMode mode,const Sample3& sample) const override{
+            if(cause_black_fringes(wo))
+                return sample_black_fringes(wo,mode,sample);
             //compute normalized local wo
-            auto wo = normalize(_wo);
-            const Vector3f lwo = Vector3f(dot(ss,wo),
-                                          dot(ts,wo),
-                                          dot(ns,wo));
+            const Vector3f lwo = shading_coord.global_to_local(wo).normalize();
+            if(!lwo.z)
+                return {};
+
             real weight_sum = 0;
             for(int i = 0; i < bxdfs_count; ++i){
                 weight_sum += weights[i];
@@ -85,42 +79,32 @@ TRACER_BEGIN
                 LOG_CRITICAL("should not be");
                 return {};
             }
-            auto bxdf_sam_ret = bxdf->sample(lwo,{sample.v,sample.w});
+            auto bxdf_sam_ret = bxdf->sample(lwo,mode,{sample.v,sample.w});
             if(!bxdf_sam_ret.is_valid())
                 return {};
 
-            bxdf_sam_ret.lwi = normalize(bxdf_sam_ret.lwi);
+            bxdf_sam_ret.lwi = bxdf_sam_ret.lwi.normalize();
             bxdf_sam_ret.pdf *= weight;
             for(int i = 0; i < bxdfs_count; i++){
                 if(bxdfs[i] == bxdf)
                     continue;
-                bxdf_sam_ret.f += bxdfs[i]->evaluate(bxdf_sam_ret.lwi,lwo);
+                bxdf_sam_ret.f += bxdfs[i]->evaluate(bxdf_sam_ret.lwi,lwo,mode);
                 bxdf_sam_ret.pdf += bxdfs[i]->pdf(bxdf_sam_ret.lwi,lwo) * weights[i];
             }
 
-            Vector3f wi = ss * bxdf_sam_ret.lwi.x + ts * bxdf_sam_ret.lwi.y
-                    + (Vector3f)ns * bxdf_sam_ret.lwi.z;
-            wi = normalize(wi);
-//            real dem = abs_dot(wi,ng);
-//            real factor = dem < eps ? 1 : abs_dot(wi,ns) / dem;
-            BSDFSampleResult ret;
-            ret.wi = wi;
-            ret.pdf = bxdf_sam_ret.pdf;
-            ret.is_delta = false;
-            ret.f = bxdf_sam_ret.f;// * factor;
-            return ret;
+            Vector3f wi = shading_coord.local_to_global(bxdf_sam_ret.lwi);
+            real normal_corr = normal_correct_factor(geometry_coord,shading_coord,wi);
+
+            return BSDFSampleResult{wi,bxdf_sam_ret.f * normal_corr,bxdf_sam_ret.pdf,false};
         }
 
         real pdf(const Vector3f& wi, const Vector3f& wo) const override{
-            //todo process black fringes
+            if(cause_black_fringes(wi,wo))
+                return pdf_black_fringes(wi,wo);
 
             //transform to local coordinate
-            Vector3f lwi = Vector3f(dot(ss,wi),
-                                    dot(ts,wi),
-                                    dot(ns,wi));
-            Vector3f lwo = Vector3f(dot(ss,wo),
-                                    dot(ts,wo),
-                                    dot(ns,wo));
+            Vector3f lwi = shading_coord.global_to_local(wi).normalize();
+            Vector3f lwo = shading_coord.global_to_local(wo).normalize();
             if(!lwi.z || !lwo.z)
                 return 0;
 
@@ -144,6 +128,10 @@ TRACER_BEGIN
                 }
             }
             return false;
+        }
+
+        Spectrum get_albedo() const override{
+            return albedo;
         }
     };
 

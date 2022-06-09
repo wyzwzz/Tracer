@@ -8,40 +8,35 @@
 #include "common.hpp"
 #include "medium.hpp"
 #include "utility/geometry.hpp"
+#include "utility/coordinate.hpp"
 TRACER_BEGIN
 
     struct SurfacePoint{
         Point3f pos;
         Point2f uv;
-        Normal3f n;
-        MediumInterface mi;
+        Coord geometry_coord;
+        Coord shading_coord;
 
         Point3f eps_offset(const Vector3f& dir) const noexcept{
-            if(dot(n,dir) > 0)
-                return pos + (Vector3f)n * eps;
-            return pos - (Vector3f)n * eps;
+            if(dot(geometry_coord.z,dir) > 0)
+                return pos + geometry_coord.z * eps;
+            return pos - geometry_coord.z * eps;
         }
     };
 
-    class SurfaceIntersection:public SurfacePoint{
+    class SurfaceIntersection: public SurfacePoint{
     public:
         const Primitive* primitive = nullptr;
-        const Material* material = nullptr;
-
+        const Material*   material = nullptr;
+        MediumInterface mi;
         Vector3f wo;
 
-        Vector3f dpdu,dpdv;
-        Vector3f dndu,dndv;
-
-        struct{
-            Vector3f dpdu,dpdv;
-            Vector3f dndu,dndv;
-            Normal3f n;
-        }shading;
     };
 
     struct SurfaceShadingPoint{
         const BSDF* bsdf = nullptr;
+
+        Vector3f shading_n;
 
     };
 

@@ -41,7 +41,7 @@ TRACER_BEGIN
 
         bool visible(const Point3f& p,const Point3f& q) const override{
             const real dist = (p - q).length();
-            Ray r(p,normalize(p - q),eps,dist - eps);
+            Ray r(q,normalize(p - q),eps,dist - eps);
             return !intersect(r);
         }
 

@@ -103,7 +103,7 @@ public:
             auto& pixel = *node->sppm_pixel;
             if((photon_pos - pixel.vp.p).length_squared() > pixel.radius * pixel.radius)
                 continue;
-            Spectrum delta_phi = phi * pixel.vp.bsdf->eval(wi,pixel.vp.wo);
+            Spectrum delta_phi = phi * pixel.vp.bsdf->eval(wi,pixel.vp.wo,TransportMode::Radiance);
             if(!delta_phi.is_finite())
                 continue;
 
@@ -259,11 +259,11 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
                     }
 
                     if(depth == params.ray_trace_max_depth - 1) break;
-                    const auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,sampler->sample3());
+                    const auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,TransportMode::Radiance,sampler->sample3());
                     if(!bsdf_sample_ret.f || bsdf_sample_ret.pdf < eps)
                         break;
                     specular_bounce = bsdf_sample_ret.is_delta;
-                    coef *= bsdf_sample_ret.f / bsdf_sample_ret.pdf * abs_dot(bsdf_sample_ret.wi,isect.shading.n);
+                    coef *= bsdf_sample_ret.f / bsdf_sample_ret.pdf * abs_cos(bsdf_sample_ret.wi,isect.geometry_coord.z);
                     ray = Ray(isect.eps_offset(bsdf_sample_ret.wi),bsdf_sample_ret.wi);
 
                     //todo apply rr?
@@ -320,13 +320,13 @@ RenderTarget SPPMRenderer::render(const Scene &scene, Film film) {
 
                     auto shd_p = isect.material->shading(isect,arena);
                     //todo importance sample
-                    auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,sampler->sample3());
+                    auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,TransportMode::Importance,sampler->sample3());
                     if(bsdf_sample_ret.f.is_back() || bsdf_sample_ret.pdf < eps){
                         break;
                     }
 
                     coef *= bsdf_sample_ret.f *
-                            abs_dot(bsdf_sample_ret.wi,isect.shading.n) / bsdf_sample_ret.pdf;
+                            abs_cos(bsdf_sample_ret.wi,isect.geometry_coord.z) / bsdf_sample_ret.pdf;
 //                    if(coef.r > 1 || coef.g > 1 || coef.b > 1){
 //                        LOG_CRITICAL("invalid coef");
 //                        break;

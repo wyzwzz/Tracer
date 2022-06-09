@@ -40,7 +40,7 @@ TRACER_BEGIN
         if(scene.intersect(shadow_ray))
             return {};
         //todo handle medium ?
-        const auto bsdf_f = shd_p.bsdf->eval(isect_to_light,isect.wo);
+        const auto bsdf_f = shd_p.bsdf->eval(isect_to_light,isect.wo,TransportMode::Radiance);
         //
         if(!bsdf_f)
             return {};
@@ -49,7 +49,7 @@ TRACER_BEGIN
         const real bsdf_pdf = shd_p.bsdf->pdf(isect_to_light,isect.wo);
 
         const Spectrum f = light_sample.radiance * bsdf_f *
-                abs_dot(isect_to_light,isect.shading.n);//todo ???
+                abs_cos(isect_to_light,isect.geometry_coord.z);
 
         float weight = PowerHeuristic(1,light_sample.pdf,1,bsdf_pdf);
 
@@ -76,7 +76,7 @@ TRACER_BEGIN
         if(scene.intersect(shadow_ray))
             return {};
 
-        const auto bsdf_f = shd_p.bsdf->eval(isect_to_light,isect.wo);
+        const auto bsdf_f = shd_p.bsdf->eval(isect_to_light,isect.wo,TransportMode::Radiance);
 
         if(!bsdf_f)
             return {};
@@ -86,7 +86,7 @@ TRACER_BEGIN
         //no need to handle medium
 
         const Spectrum f = light_sample_ret.radiance * bsdf_f *
-                           abs_dot(isect_to_light,isect.shading.n);//todo ???
+                           abs_cos(isect_to_light,isect.geometry_coord.z);
 
         float weight = PowerHeuristic(1,light_sample_ret.pdf,1,bsdf_pdf);
 
@@ -100,7 +100,7 @@ TRACER_BEGIN
                          const SurfaceShadingPoint& shd_p,Sampler& sampler){
         const Sample3 sample = sampler.sample3();
 
-        auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,sample);
+        auto bsdf_sample_ret = shd_p.bsdf->sample(isect.wo,TransportMode::Radiance,sample);
         if(!bsdf_sample_ret.is_valid())
             return {};
         bsdf_sample_ret.wi = normalize(bsdf_sample_ret.wi);
@@ -116,7 +116,7 @@ TRACER_BEGIN
                 if(!envir_radiance)
                     return {};
 
-                Spectrum f = envir_radiance * bsdf_sample_ret.f * abs_dot(isect.n,ray.d);
+                Spectrum f = envir_radiance * bsdf_sample_ret.f * abs_cos(isect.geometry_coord.z,ray.d);
                 if(bsdf_sample_ret.is_delta)
                     envir_illum = f / bsdf_sample_ret.pdf;
                 else{
@@ -140,12 +140,12 @@ TRACER_BEGIN
 
         //todo handle medium ?
 
-        Spectrum f = light_radiance * bsdf_sample_ret.f * abs_dot(isect.shading.n,ray.d);
+        Spectrum f = light_radiance * bsdf_sample_ret.f * abs_cos(isect.geometry_coord.z,ray.d);
 
         if(bsdf_sample_ret.is_delta)
             return f / bsdf_sample_ret.pdf;
 
-        real light_pdf = light->pdf(ray.o,t_isect.pos,t_isect.n);
+        real light_pdf = light->pdf(ray.o,t_isect.pos,(Normal3f)t_isect.geometry_coord.z);
 
         real weight = PowerHeuristic(1,bsdf_sample_ret.pdf,1,light_pdf);
 

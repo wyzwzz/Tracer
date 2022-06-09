@@ -56,7 +56,8 @@ TRACER_BEGIN
 
             const real specular_weight = 1 - diffuse_weight;
 
-            auto bsdf = arena.alloc_object<AggregateBSDF<2>>(isect);
+            auto bsdf = arena.alloc_object<AggregateBSDF<2>>(isect.geometry_coord,isect.shading_coord,
+                    diffuse + specular);
 
             bsdf->add_bxdf(arena.alloc_object<DiffuseBXDF>(diffuse),diffuse_weight);
 
