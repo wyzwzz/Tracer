@@ -19,7 +19,7 @@ struct BSDFSampleResult{
     bool      is_delta = false;
 
     bool is_valid() const{
-        return wi && pdf > 0 && !f.is_back();
+        return pdf > 0 && !f.is_back();
     }
 };
 

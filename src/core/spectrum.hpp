@@ -19,8 +19,19 @@ TRACER_BEGIN
      Color3(T r,T g,T b):r(r),g(g),b(b){}
      explicit Color3(T val):Color3(val,val,val){}
 
+     //rgb == 0
      bool is_back() const noexcept{
          return r == 0 && g == 0 && b == 0;
+     }
+
+     //rgb >= 0 and is finite
+     bool is_valid() const noexcept{
+         return r >=0 && g >= 0 && b >= 0 && is_finite();
+     }
+
+     //rgb > 0 and is finite
+     bool is_meaningful() const noexcept{
+         return is_finite() && r > 0 && g > 0 && b > 0;
      }
 
      bool is_finite() const noexcept{
@@ -82,6 +93,12 @@ TRACER_BEGIN
 
      T lum() const{
          return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+     }
+
+     template<typename F>
+     auto map(F && f) const noexcept{
+         using RT = std::remove_cv_t<decltype(f(r))>;
+         return Color3<RT>(f(r),f(g),f(b));
      }
 
     };

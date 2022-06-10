@@ -11,6 +11,7 @@
 #include "factory/primivite.hpp"
 #include "factory/material.hpp"
 #include "factory/light.hpp"
+#include "factory/post_processor.hpp"
 #include "utility/image_file.hpp"
 #include "utility/logger.hpp"
 #include "utility/timer.hpp"
@@ -59,8 +60,8 @@ SPPMRendererParams sppm_params{.init_search_radius = 0.25,
 BDPTRendererParams bdpt_params{
     .worker_count = 18,
     .task_tile_size = 16,
-    .max_camera_vertex_count = 12,
-    .max_light_vertex_count = 12,
+    .max_camera_vertex_count = 10,
+    .max_light_vertex_count = 10,
     .spp =  1024
 };
 
@@ -144,6 +145,9 @@ void run(const RenderParams& params){
     auto render_target = renderer->render(*scene.get(), Film({params.render_target_width, params.render_target_height}, filter));
     write_image_to_hdr(render_target.color, params.render_result_name+".hdr");
     LOG_INFO("write hdr...");
+    auto gamma_corrector = create_gamma_corrector(1.0/2.2);
+    auto aces_tone_mapper = create_aces_tone_mapper(1);
+//    aces_tone_mapper->process(render_target);
     auto& imgf = render_target.color;
     Image2D<Color3b> imgu8(imgf.width(),imgf.height());
     real inv_gamma = 1.0 / 2.2;
@@ -207,10 +211,10 @@ int main(int argc,char** argv){
         .obj_file_name = "veach-mis.obj"
     };
     RenderParams diningroom = {
-            .render_result_name = "tracer_diningroom_bdpt_1024",
+            .render_result_name = "tracer_diningroom_bdpt_test_ts",
             .filter = {.radius = 0.5,.alpha = 0.6},
-            .render_target_width = 1280,
-            .render_target_height = 720,
+            .render_target_width = 450,
+            .render_target_height = 270,
             .camera = {
                     .pos = {0.0,12.720,31.850},
                     .target = {0.0,12.546,30.865},

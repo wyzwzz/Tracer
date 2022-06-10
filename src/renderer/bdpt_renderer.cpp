@@ -359,7 +359,7 @@ namespace bdpt{
         //sample light emit
         const auto light_emit_ret = light->sample_le(sampler.sample5());
 
-        if(!light_emit_ret.radiance){
+        if(!light_emit_ret.is_valid()){
             return 0;
         }
 
@@ -747,7 +747,7 @@ namespace bdpt{
                     light_pdf.pdf_pos
             };
 
-            return  compute_mis_weight(camera_subpath,t,nullptr,0);
+            return compute_mis_weight(camera_subpath,t,nullptr,0);
         }
         return 0;
     }
@@ -825,9 +825,9 @@ namespace bdpt{
 
         auto camera_v = bdpt::create_camera_vertex(a.camera_pt.pos,a.camera_pt.n);
         camera_v.accu_coef = Spectrum(1);
-        camera_v.is_delta = false;
-        camera_v.pdf_fwd = camera_we_ret.pdf_pos;
-        camera_v.pdf_bwd = bdpt::pdf_from_to(b,camera_v);
+        camera_v.is_delta  = false;
+        camera_v.pdf_fwd   = camera_we_ret.pdf_pos;
+        camera_v.pdf_bwd   = bdpt::pdf_from_to(b,camera_v);
 
         ScopedAssignment<real> scope_b_pdf_fwd = {
                 &b.pdf_fwd,
@@ -843,7 +843,6 @@ namespace bdpt{
                 c_pdf_fwd
         };
         return compute_mis_weight(&camera_v,1,light_subpath,s);
-
     }
 
     real mis_weight_tx_sx(const Scene& scene,Vertex* camera_subpath,int t,
@@ -929,7 +928,9 @@ namespace bdpt{
                 }
 
                 if(t == 2 && s == 0){
-                    L += t2_s0_path_contrib(scene,camera_subpath);
+                    Spectrum Ld = t2_s0_path_contrib(scene,camera_subpath);
+                    assert(Ld.is_valid());
+                    L += Ld;
                     continue;
                 }
 
@@ -939,23 +940,27 @@ namespace bdpt{
                                                      (Bounds2f)film.get_film_bounds(),
                                                      {film.width(),film.height()},
                                                      film_pixel_coord,sampler);
+                    assert(Ld.is_valid());
                     real weight = mis_weight_t1_sx(scene,camera_subpath,light_subpath,s);
                     //add to external place
-                    if(!Ld.is_back() && Ld.is_finite())
+                    if(Ld.is_meaningful())
                         f(film_pixel_coord,weight * Ld);
                 }
                 else if(s == 0){
                     Spectrum Ld = tx_s0_path_contrib(scene,camera_subpath,t);
+                    assert(Ld.is_valid());
                     real weight = mis_weight_tx_s0(scene,camera_subpath,t,params.scene_light_distribution,params.light_index);
                     L += weight * Ld;
                 }
                 else if(s == 1){
                     Spectrum Ld = tx_s1_path_contrib(scene,camera_subpath,t,light_subpath,sampler);
+                    assert(Ld.is_valid());
                     real weight = mis_weight_tx_s1(scene,camera_subpath,t,light_subpath);
                     L += weight * Ld;
                 }
                 else{
                     Spectrum Ld = tx_sx_path_contrib(scene,camera_subpath,t,light_subpath,s,sampler);
+                    assert(Ld.is_valid());
                     real weight = mis_weight_tx_sx(scene,camera_subpath,t,light_subpath,s);
                     L += weight * Ld;
                 }
@@ -1086,14 +1091,10 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
                                              light_subpath,light_subpath_count,*sampler,
                                              [&](const Point2f& coord,const Spectrum& v){
                     //process for t == 1
-                    const real weight = film.get_filter()->eval(
-                         coord.x - std::floor(coord.x) - 0.5,
-                         coord.y - std::floor(coord.y) - 0.5);
-                    //todo weight is useless?
-//                    LOG_INFO("weight: {}",weight);
+
                     //add Ld to splat image because this Ld is not belong to this tile pixel
-                    splat_image.at(std::min<int>(film_width - 1,std::floor(coord.x)),
-                            std::min<int>(film_height - 1,std::floor(coord.y))).add(v);
+                    splat_image.at(std::min<int>(film_width - 1,coord.x),
+                            std::min<int>(film_height - 1,coord.y)).add(v);
                 });
 
                 film_tile->add_sample(pixel_coord,L);
@@ -1109,8 +1110,6 @@ RenderTarget BDPTRenderer::render(const Scene &scene, Film film){
 
     for(int y = 0; y < film_height; ++y){
         for(int x = 0; x < film_width; ++x){
-            auto v= splat_image.at(x,y).to_spectrum();
-            if(!v.is_back())
             ret.color(x,y) += splat_image.at(x,y).to_spectrum() * ( real(1) / spp);
         }
     }

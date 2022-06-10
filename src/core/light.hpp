@@ -34,6 +34,9 @@ struct LightEmitResult{
     Spectrum radiance;
     real pdf_pos;
     real pdf_dir;
+    bool is_valid() const{
+        return pdf_dir > 0 && pdf_pos > 0 && !radiance.is_back();
+    }
 };
 
 struct LightEmitPdfResult{
