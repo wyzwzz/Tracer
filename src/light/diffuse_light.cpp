@@ -41,12 +41,12 @@ real DiffuseLight::pdf(const Point3f& ref,const Point3f& pos,const Normal3f& n) 
     return  dist2 / area;
 }
 
-LightSampleResult DiffuseLight::sample_li(const SurfacePoint& ref,const Sample5& sample) const {
+LightSampleResult DiffuseLight::sample_li(const Point3f& ref,const Sample5& sample) const {
     real area_pdf;//equal to 1 / surface area
     auto sp = shape->sample(ref,&area_pdf,{sample.u,sample.v});
-    if(dot(sp.geometry_coord.z,ref.pos - sp.pos) <= 0)
+    if(dot(sp.geometry_coord.z,ref - sp.pos) <= 0)
         return {};
-    Vector3f sp2ref = ref.pos - sp.pos;
+    Vector3f sp2ref = ref - sp.pos;
     real dist2 = sp2ref.length_squared();
     real pdf = area_pdf * dist2 / std::abs(dot(sp.geometry_coord.z,sp2ref) / (sp2ref.length()));
 

@@ -16,6 +16,12 @@ Spectrum sample_light(const Scene& scene,const Light* light,
                       const SurfaceShadingPoint& shd_p,
                       Sampler& sampler);
 
+Spectrum sample_light(const Scene& scene,const Light* light,
+                      const MediumScatteringP& scattering_p,
+                      const BSDF* phase_func,
+                      Sampler& sampler);
+
+
 Spectrum sample_area_light(const Scene& scene,const AreaLight* light,
                            const SurfaceIntersection& isect,
                            const SurfaceShadingPoint& shd_p,
@@ -26,8 +32,21 @@ Spectrum sample_environment_light(const Scene& scene,const EnvironmentLight* lig
                                   const SurfaceShadingPoint& shd_p,
                                   Sampler& sampler);
 
+Spectrum sample_area_light(const Scene& scene,const AreaLight* light,
+                      const MediumScatteringP& scattering_p,
+                      const BSDF* phase_func,
+                      Sampler& sampler);
+
+Spectrum sample_environment_light(const Scene& scene,const EnvironmentLight* light,
+                      const MediumScatteringP& scattering_p,
+                      const BSDF* phase_func,
+                      Sampler& sampler);
+
 Spectrum sample_bsdf(const Scene& scene,const SurfaceIntersection& isect,
                      const SurfaceShadingPoint& shd_p,Sampler& sampler);
+
+Spectrum sample_bsdf(const Scene& scene,const MediumScatteringP& scattering_p,
+                     const BSDF* phase_func,Sampler& sampler);
 
 Box<Distribution1D> compute_light_power_distribution(const Scene& scene);
 

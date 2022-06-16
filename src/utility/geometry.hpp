@@ -966,6 +966,11 @@ namespace tracer {
     inline real distance_squared(const Point3<T> &p1, const Point3<T> &p2) {
         return (p1 - p2).length_squared();
     }
+    template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+    auto square(T val) noexcept
+    {
+        return val * val;
+    }
 }
 
 namespace std{

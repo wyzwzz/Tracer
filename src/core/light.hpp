@@ -54,7 +54,7 @@ public:
 
     virtual const EnvironmentLight* as_environment_light() const noexcept {return nullptr;}
 
-    virtual LightSampleResult sample_li(const SurfacePoint& ref,const Sample5&) const = 0;
+    virtual LightSampleResult sample_li(const Point3f& ref,const Sample5&) const = 0;
 
     virtual LightEmitResult sample_le(const Sample5&) const = 0;
 

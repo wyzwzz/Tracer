@@ -26,11 +26,16 @@ class Sampler;
 class Ray;
 class Renderer;
 class Primitive;
+class Medium;
 class MediumInterface;
 class BSDF;
+class BSSRDF;
+class Texture2D;
+class Texture3D;
 class SurfaceIntersection;
 class Light;
 class EnvironmentLight;
+class MemoryArena;
 
     using real = float;
 
@@ -67,6 +72,7 @@ class EnvironmentLight;
 
 //A non-inline const variable that is not explicitly declared extern has internal linkage
 constexpr real REAL_MAX = std::numeric_limits<real>::max();
+constexpr real REAL_MIN = std::numeric_limits<real>::lowest();
 
     struct Sample1 { real u; };
     struct Sample2 { real u, v; };

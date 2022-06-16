@@ -39,6 +39,8 @@ public:
         Spectrum L(0);
         bool specular_sample = false;
 
+        int scattering_count = 0;
+
         for(int depth = 0, s_depth = 0; depth < max_depth; ++depth){
             if(!coef.is_finite()){
                 LOG_CRITICAL("coef get infinite");
@@ -69,6 +71,44 @@ public:
 //                return Spectrum(1,0,0);
                 break;
             }
+
+            const auto medium = isect.wo_medium();
+            if(scattering_count < medium->get_max_scattering_count()){
+                const auto medium_sample_ret = medium->sample(r.o,isect.pos,sampler,arena,scattering_count > 0);
+
+                coef *= medium_sample_ret.throughout;
+
+                if(medium_sample_ret.is_scattering_happened()){
+                    scattering_count++;
+                    const auto& scattering_p = medium_sample_ret.scattering_point;
+                    const auto phase_func = medium_sample_ret.phase_func;
+
+                    Spectrum direct_illum;
+                    for(int i = 0; i < direct_light_sample_num; ++i){
+                        for(auto light:scene.lights){
+                            direct_illum += coef * sample_light(scene,light,scattering_p,phase_func,sampler);
+                        }
+                        direct_illum += coef * sample_bsdf(scene,scattering_p,phase_func,sampler);
+                    }
+                    L += real(1) / direct_light_sample_num * direct_illum;
+
+                    const auto bsdf_sample_ret = phase_func->sample(scattering_p.wo,TransportMode::Radiance,sampler.sample3());
+                    if(!bsdf_sample_ret.is_valid())
+                        break;
+
+                    ray = Ray(scattering_p.pos,bsdf_sample_ret.wi);
+                    coef *= bsdf_sample_ret.f / bsdf_sample_ret.pdf;
+                    continue;
+                }
+            }
+            else{
+                //continent scattering too much
+                //no scattering
+                //todo ???
+                coef *= medium->tr(ray.o,isect.pos,sampler);
+                scattering_count = 0;
+            }
+
 
             auto shading_p = isect.material->shading(isect,arena);
 
@@ -105,14 +145,22 @@ public:
                 s_depth++;
                 depth--;
             }
-            //todo handle refract?
 
             coef *= bsdf_sample.f * abs_cos(isect.geometry_coord.z,bsdf_sample.wi) / bsdf_sample.pdf;
 
              ray = Ray(isect.eps_offset(bsdf_sample.wi),
                      normalize(bsdf_sample.wi));
 
-            //todo handle medium or bssdf ?
+            //todo handle bssdf
+            if(!shading_p.bssrdf)
+                continue;
+
+            bool pos_wi = isect.geometry_coord.in_positive_z_hemisphere(bsdf_sample.wi);
+            bool pos_wo = isect.geometry_coord.in_positive_z_hemisphere(isect.wo);
+            //refract happened
+            if(!pos_wi && pos_wo){
+
+            }
 
             //apply russian roulette
             Spectrum rr_coef = coef;

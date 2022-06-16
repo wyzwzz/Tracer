@@ -12,6 +12,7 @@
 #include "factory/material.hpp"
 #include "factory/light.hpp"
 #include "factory/post_processor.hpp"
+#include "factory/medium.hpp"
 #include "utility/image_file.hpp"
 #include "utility/logger.hpp"
 #include "utility/timer.hpp"
@@ -41,9 +42,9 @@ struct RenderParams{
 PTRendererParams pt_params{
     .worker_count = 18,
     .task_tile_size = 16,
-    .spp = 16,
-    .min_depth = 5,
-    .max_depth = 10,
+    .spp = 4096,
+    .min_depth = 15,
+    .max_depth = 20,
     .direct_light_sample_num = 1};
 
 SPPMRendererParams sppm_params{.init_search_radius = 0.25,
@@ -99,6 +100,8 @@ void run(const RenderParams& params){
         }
     }
     LOG_INFO("load material texture count: {}",materials_res.size());
+    auto vacuum = create_vacuum();
+    auto fog = create_homogeneous_medium({0.03,0.03,0.03},{0.3,0.3,0.3},0.8,25);
     for(const auto& mesh:model.mesh){
         assert(mesh.indices.size() % 3 == 0);
         const auto triangle_count = mesh.indices.size() / 3;
@@ -106,6 +109,8 @@ void run(const RenderParams& params){
         auto triangles = create_triangle_mesh(mesh);
         assert(triangles.size() == triangle_count);
         MediumInterface mi;
+        mi.inside = vacuum;
+        mi.outside = fog;
         for(size_t i = 0; i < triangle_count; ++i){
             //todo handle emission material
             assert(mesh.materials[i] < materials.size());
@@ -137,9 +142,9 @@ void run(const RenderParams& params){
     }
     scene->prepare_to_render();
     //create renderer
-//    auto renderer = create_pt_renderer(pt_params);
+    auto renderer = create_pt_renderer(pt_params);
 //    auto renderer = create_sppm_renderer(sppm_params);
-    auto renderer = create_bdpt_renderer(bdpt_params);
+//    auto renderer = create_bdpt_renderer(bdpt_params);
 
     AutoTimer timer("render","s");
     auto render_target = renderer->render(*scene.get(), Film({params.render_target_width, params.render_target_height}, filter));
@@ -180,10 +185,10 @@ int main(int argc,char** argv){
     };
 
     RenderParams cornell_box = {
-        .render_result_name = "tracer_cornel-box_bdpt",
+        .render_result_name = "tracer_cornel-box_pt_vol_test",
         .filter = {.radius = 0.5,.alpha = 0.6},
-        .render_target_width = 1024,
-        .render_target_height = 1024,
+        .render_target_width = 300,
+        .render_target_height = 300,
         .camera = {
                 .pos = {0,1,6.8},
                 .target = {0,1,5.8},
@@ -243,7 +248,7 @@ int main(int argc,char** argv){
     };
 
     try{
-        run(diningroom);
+        run(cornell_box);
     }
     catch(const std::exception& e){
         LOG_CRITICAL("exception: {}",e.what());

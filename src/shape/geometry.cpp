@@ -35,6 +35,7 @@ TRACER_BEGIN
                                            const Spectrum& emission)
             :shape(shape),material(material), medium_interface(mi)
     {
+        assert(mi.inside && mi.outside);
         if(!emission.is_back()){
             diffuse_light = newBox<DiffuseLight>(shape,emission);
             LOG_INFO("create diffuse light from shape");
@@ -53,8 +54,8 @@ TRACER_BEGIN
         isect->primitive = this;
         isect->material = material.get();
 
-        isect->mi = medium_interface;
-
+        isect->medium_inside = medium_interface.inside.get();
+        isect->medium_outside = medium_interface.outside.get();
         return true;
     }
 

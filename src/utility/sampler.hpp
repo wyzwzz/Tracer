@@ -46,15 +46,15 @@ TRACER_BEGIN
         template <typename Texel>
         static auto Sample3D(const Image3D<Texel> &tex, double u, double v, double k) -> Texel
         {
-            u = std::clamp(u, 0.0, 1.0) * (tex.GetXSize() - 1);
-            v = std::clamp(v, 0.0, 1.0) * (tex.GetYSize() - 1);
-            k = std::clamp(k, 0.0, 1.0) * (tex.GetZSize() - 1);
-            int u0 = std::clamp(static_cast<int>(u), 0, static_cast<int>(tex.GetXSize() - 1));
-            int u1 = std::clamp(u0 + 1, 0, static_cast<int>(tex.GetXSize() - 1));
-            int v0 = std::clamp(static_cast<int>(v), 0, static_cast<int>(tex.GetYSize() - 1));
-            int v1 = std::clamp(v0 + 1, 0, static_cast<int>(tex.GetYSize() - 1));
-            int k0 = std::clamp(static_cast<int>(k), 0, static_cast<int>(tex.GetZSize() - 1));
-            int k1 = std::clamp(k0 + 1, 0, static_cast<int>(tex.GetZSize() - 1));
+            u = std::clamp(u, 0.0, 1.0) * (tex.width() - 1);
+            v = std::clamp(v, 0.0, 1.0) * (tex.height() - 1);
+            k = std::clamp(k, 0.0, 1.0) * (tex.depth() - 1);
+            int u0 = std::clamp(static_cast<int>(u), 0, static_cast<int>(tex.width() - 1));
+            int u1 = std::clamp(u0 + 1, 0, static_cast<int>(tex.width() - 1));
+            int v0 = std::clamp(static_cast<int>(v), 0, static_cast<int>(tex.height() - 1));
+            int v1 = std::clamp(v0 + 1, 0, static_cast<int>(tex.height() - 1));
+            int k0 = std::clamp(static_cast<int>(k), 0, static_cast<int>(tex.depth() - 1));
+            int k1 = std::clamp(k0 + 1, 0, static_cast<int>(tex.depth() - 1));
             double d_u = u - u0;
             double d_v = v - v0;
             double d_k = k - k0;

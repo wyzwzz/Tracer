@@ -24,7 +24,7 @@ TRACER_BEGIN
         Spectrum evaluate_impl(const Point2f& uv) const noexcept override{
             auto v =  LinearSampler::Sample2D(*data.get(),uv.x,uv.y);
             //todo convert color3b to color3f
-            return Spectrum(v.x/255.0,v.y/255.0,v.z/255.0);
+            return Spectrum(v.x/real(255.0),v.y/real(255.0),v.z/real(255.0));
         }
     private:
         RC<Image2D<Color3b>> data;

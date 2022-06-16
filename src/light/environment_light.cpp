@@ -85,7 +85,7 @@ TRACER_BEGIN
             return avg_radiance * world_radius * world_radius;//todo ?
         }
 
-        LightSampleResult sample_li(const SurfacePoint& ref,const Sample5& sample) const override{
+        LightSampleResult sample_li(const Point3f& ref,const Sample5& sample) const override{
             real map_pdf;
             auto [u,v] = distrib->sample_continuous(sample.u,sample.v,&map_pdf);
             if(map_pdf == 0) return {};
@@ -105,11 +105,11 @@ TRACER_BEGIN
             //p(wi) = p(theta,phi) / sin_theta = p(u,v) / (2 * PI * PI * sin_theta)
             real pdf = map_pdf / ( 2 * PI_r * PI_r * sin_theta);//Jacobian
             LightSampleResult ret;
-            ret.ref = ref.pos;
+            ret.ref = ref;
             ret.n = (Normal3f)-wi;
-            ret.radiance = light_emit(ref.pos,wi);
+            ret.radiance = light_emit(ref,wi);
             ret.pdf = pdf;
-            ret.pos = ref.pos + wi * (2 * world_radius);
+            ret.pos = ref + wi * (2 * world_radius);
             return ret;
         }
 

@@ -25,6 +25,7 @@ file(
         src/accelerator/*.cpp
         src/material/bxdf/*.cpp
         src/post_processor/*.cpp
+        src/medium/*.cpp
 )
 
 add_executable(Tracer ${SRCS})

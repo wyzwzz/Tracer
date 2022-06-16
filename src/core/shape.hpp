@@ -22,7 +22,7 @@ public:
 
     virtual SurfacePoint sample(real* pdf,const Sample2& sample) const noexcept = 0;
 
-    virtual SurfacePoint sample(const SurfacePoint& ref,real* pdf,const Sample2& sample) const noexcept = 0;
+    virtual SurfacePoint sample(const Point3f& ref,real* pdf,const Sample2& sample) const noexcept = 0;
 
     virtual real pdf(const Point3f& pos) const noexcept = 0;
 

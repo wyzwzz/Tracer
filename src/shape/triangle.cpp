@@ -96,7 +96,7 @@ TRACER_BEGIN
             return sp;
         }
 
-        SurfacePoint sample(const SurfacePoint& ref,real* pdf,const Sample2& sam) const noexcept{
+        SurfacePoint sample(const Point3f& ref,real* pdf,const Sample2& sam) const noexcept{
             return sample(pdf,sam);
         }
 

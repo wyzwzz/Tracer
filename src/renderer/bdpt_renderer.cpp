@@ -77,13 +77,19 @@ namespace bdpt{
             Vector3f wo;
             const BSDF* bsdf = nullptr;
             const Primitive* primitive = nullptr;
+            const Medium* medium_outside = nullptr;
+            const Medium* medium_inside = nullptr;
+            const Medium* medium(const Vector3f& wo) const noexcept{
+                return dot(wo,n) > 0 ? medium_outside : medium_inside;
+            }
         };
-        static_assert(sizeof(SurfacePoint) == 64,"");
+        static_assert(sizeof(SurfacePoint) == 80,"");
 
         struct MediumPoint{
             Point3f pos;
             const BSDF* phase = nullptr;
             Vector3f wo;
+            const Medium* medium = nullptr;
         };
 
         struct CameraPoint{
@@ -112,7 +118,7 @@ namespace bdpt{
     };
 
     static_assert(sizeof(bool) == 1,"");
-    static_assert(sizeof(Vertex) == 96,"");
+    static_assert(sizeof(Vertex) == 112,"");
 
     bool is_scattering_type(const Vertex& v){
         return v.type == VertexType::Surface || v.type == VertexType::Medium;
@@ -176,7 +182,8 @@ namespace bdpt{
         v.surface_pt.wo = isect.wo;
         v.surface_pt.bsdf = bsdf;
         v.surface_pt.primitive = isect.primitive;
-
+        v.surface_pt.medium_inside = isect.medium_inside;
+        v.surface_pt.medium_outside = isect.medium_outside;
         return v;
     }
 
@@ -194,9 +201,14 @@ namespace bdpt{
         return v;
     }
 
-    Vertex create_medium_vertex(){
-        NOT_IMPL
-        return {};
+    Vertex create_medium_vertex(const Point3f& pos,const Vector3f& wo,const Medium* medium,const BSDF* phase){
+        Vertex ret;
+        ret.type = VertexType::Medium;
+        ret.medium_pt.pos = pos;
+        ret.medium_pt.wo = wo;
+        ret.medium_pt.medium = medium;
+        ret.medium_pt.phase = phase;
+        return ret;
     }
     Vertex create_area_light_vertex(const Point3f& pos,const Normal3f& n,const Point2f& uv,const AreaLight* light){
         Vertex v;
@@ -312,10 +324,32 @@ namespace bdpt{
                 break;
             }
 
-            //todo process medium
+            //process medium
+            auto medium = isect.medium(isect.wo);
+            auto medium_sample_ret = medium->sample(r.o,isect.pos,sampler,arena);
+            accu_coef *= medium_sample_ret.throughout;
+            if(medium_sample_ret.is_scattering_happened()){
+                const auto& sp = medium_sample_ret.scattering_point;
 
-            //process surface
+                auto& new_v = v_path[vertex_count++];
+                new_v = create_medium_vertex(sp.pos,sp.wo,sp.medium,medium_sample_ret.phase_func);
+                new_v.accu_coef = accu_coef;
+                new_v.pdf_fwd = pdf_fwd / distance_squared(sp.pos,r.o);
+                new_v.is_delta = false;
+
+                const auto phase_sample = medium_sample_ret.phase_func->sample(sp.wo,TransportMode::Radiance,sampler.sample3());
+                assert(phase_sample.is_valid());
+                const real pdf_bwd = medium_sample_ret.phase_func->pdf(isect.wo,phase_sample.wi);
+                auto& last_v = v_path[vertex_count - 2];
+                last_v.pdf_bwd = pdf_solid_angle_to_area(pdf_bwd,sp.pos,last_v);
+
+                accu_coef *= phase_sample.f / phase_sample.pdf;
+                pdf_fwd = phase_sample.pdf;
+                r = Ray(sp.pos,phase_sample.wi);
+            }
+            else
             {
+                //process surface
                 SurfaceShadingPoint shd_p = isect.material->shading(isect,arena);
                 assert(shd_p.bsdf);
                 //add surface vertex
@@ -404,10 +438,30 @@ namespace bdpt{
                 break;
             }
 
-            //todo process medium
+            const auto medium = isect.medium(isect.wo);
+            const auto medium_sample_ret = medium->sample(r.o,isect.pos,sampler,arena);
+            accu_coef *= medium_sample_ret.throughout;
+            if(medium_sample_ret.is_scattering_happened()){
+                auto& sp = medium_sample_ret.scattering_point;
+                auto& new_v = v_path[vertex_count++];
+                new_v = create_medium_vertex(sp.pos,isect.wo,sp.medium,medium_sample_ret.phase_func);
+                new_v.accu_coef = accu_coef;
+                new_v.pdf_bwd = pdf_bwd / distance_squared(r.o,sp.pos);
+                new_v.is_delta = false;
 
-            //process surface
+                auto phase_sample_ret = medium_sample_ret.phase_func->sample(
+                        sp.wo,TransportMode::Importance,sampler.sample3());
+                real pdf_fwd = medium_sample_ret.phase_func->pdf(sp.wo,phase_sample_ret.wi);
+                auto& last_v = v_path[vertex_count - 2];
+                last_v.pdf_fwd = pdf_solid_angle_to_area(pdf_fwd,sp.pos,last_v);
+
+                accu_coef *= phase_sample_ret.f / phase_sample_ret.pdf;
+                pdf_bwd = phase_sample_ret.pdf;
+                r = Ray(sp.pos,phase_sample_ret.wi);
+            }
+            else
             {
+                //process surface
                 SurfaceShadingPoint shd_p = isect.material->shading(isect,arena);
                 assert(shd_p.bsdf);
                 //add surface vertex
@@ -521,12 +575,13 @@ namespace bdpt{
 
             auto bsdf = bdpt::get_scattering_bsdf(camera_end);
 
-            //todo add transport mode
             Spectrum bsdf_f = bsdf->eval(camera_to_light,
                                          bdpt::get_scattering_wo(camera_end), TransportMode::Radiance);
 
-            //todo handle medium tr
+            const auto medium = camera_end.type == VertexType::Surface ?
+                    camera_end.surface_pt.medium(camera_to_light) : camera_end.medium_pt.medium;
 
+            Spectrum tr = medium->tr(camera_end_pos,light_v.area_light_pt.pos,sampler);
 
             if (camera_end.type == bdpt::VertexType::Surface) {
                 bsdf_f *= abs_cos((Vector3f)camera_end.surface_pt.n, camera_to_light);
@@ -534,7 +589,7 @@ namespace bdpt{
 
             bsdf_f *= abs_cos((Vector3f)light_v.area_light_pt.n, -camera_to_light);
 
-            return camera_end.accu_coef * bsdf_f * light_radiance
+            return camera_end.accu_coef * bsdf_f * light_radiance * tr
                    / distance_squared(camera_end_pos, light_v.area_light_pt.pos)
                    / light_v.pdf_bwd;
         }
@@ -609,10 +664,14 @@ namespace bdpt{
         }
         G *= abs_cos((Vector3f)camera_we.n,light_to_camera);
 
-        //todo handle medium tr
+        auto medium = light_end.type == VertexType::Surface ?
+                light_end.surface_pt.medium(light_to_camera) :
+                light_end.medium_pt.medium;
+
+        auto tr = medium->tr(camera_pos,light_end_pos,sampler);
 
         //evaluate contribution
-        return camera_we.we * G * f * light_end.accu_coef
+        return camera_we.we * G * f * light_end.accu_coef * tr
              / camera_subpath[0].pdf_fwd;
     }
 
@@ -662,11 +721,16 @@ namespace bdpt{
         if(light_end.type == bdpt::VertexType::Surface){
             G *= abs_cos((Vector3f)light_end.surface_pt.n,-camera_to_light);
         }
-        //todo handle medium tr
 
+        assert(camera_end.type != VertexType::Camera
+        && camera_end.type != VertexType::AreaLight);
+        auto medium = camera_end.type == VertexType::Surface ?
+            camera_end.surface_pt.medium(camera_to_light) : camera_end.medium_pt.medium;
+
+        Spectrum tr = medium->tr(camera_end_pos,light_end_pos,sampler);
 
         //evaluate contribution
-        return camera_end.accu_coef * camera_bsdf_f * G *
+        return camera_end.accu_coef * camera_bsdf_f * G * tr *
              light_end.accu_coef * light_bsdf_f;
     }
     inline real remap(real f){

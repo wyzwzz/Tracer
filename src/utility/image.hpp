@@ -144,6 +144,78 @@ TRACER_BEGIN
     template<typename T>
     class Image3D{
     public:
+        Image3D():w(0),h(0),d(0),data(nullptr){}
+        Image3D(int width,int height,int depth,const T* src = nullptr)
+                :w(width),h(height),d(depth),data(newBox<T[]>((size_t)width*height*depth))//注意w和h在data之后初始化
+        {
+            if(src){
+                std::copy(src,src+(size_t)w*h*d,data.get());
+//                memcpy(data.get(),d,w*h*sizeof(T));
+            }
+            else{
+                memset(data.get(),0,sizeof(T)*width*height*depth);
+            }
+        }
+        Image3D(Image3D&& other) noexcept
+        :w(other.w),h(other.h),d(other.d),data(std::move(other.data))
+        {
+
+        }
+        Image3D& operator=(Image3D&& other) noexcept{
+            destroy();
+            new(this) Image3D(std::move(other));
+            other.destroy();
+            return *this;
+        }
+
+        template<typename U>
+        Image3D& operator*=(const U& u){
+            size_t total = (size_t)w * h * d;
+            for(size_t i = 0; i < total; ++i){
+                data[i] *= u;
+            }
+            return *this;
+        }
+
+        template<typename F>
+        void map(F&& f){
+            size_t total = (size_t)w * h * d;
+            for(size_t i = 0; i < total; ++i){
+                data[i] = f(data[i]);
+            }
+        }
+
+        T& operator()(int x,int y,int z) const{
+            return at(x,y,z);
+        }
+
+        T& at(int x,int y,int z) const{
+            if(x < 0 || x >= w || y < 0 || y >= h || z < 0 || z >= d){
+                LOG_CRITICAL("invalid x y z {} {} {}",x,y,z);
+                throw std::out_of_range("invalid x y z");
+            }
+            return data[x + y * w + (size_t)z * w * h];
+        }
+
+        void destroy(){
+            if(data){
+                data.reset();
+                w = h = d = 0;
+            }
+        }
+
+        T* get_raw_data(){
+            return data.get();
+        }
+        const T* get_raw_data() const{
+            return data.get();
+        }
+        int width() const {return w;}
+        int height() const{return h;}
+        int depth() const {return d;}
+    private:
+        Box<T[]> data;
+        int w,h,d;
     };
 
 TRACER_END
