@@ -23,6 +23,11 @@ RC<Material> create_phong_material(
         RC<const Texture2D> map_ns
         );
 
+RC<Material> create_invisible_surface(RC<const BSSRDFSurface> bssrdf_surface);
+
+RC<Material> create_invisible_surface();
+
+
 TRACER_END
 
 #endif //TRACER_FACTORY_MATERIAL_HPP

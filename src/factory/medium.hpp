@@ -24,6 +24,13 @@ RC<Medium> create_homogeneous_medium(
         real g,
         int max_scattering_count);
 
+RC<Medium> create_volume_medium(
+        RC<const Texture3D> volume_data,
+        RC<const Texture1D> albedo,
+        RC<const Texture1D> alpha,
+        int max_scattering_count,
+        bool white_for_indirect);
+
 RC<Medium> create_vacuum();
 
 

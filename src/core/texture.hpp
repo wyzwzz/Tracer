@@ -11,6 +11,46 @@
 #include "utility/logger.hpp"
 TRACER_BEGIN
 
+class Texture1D{
+protected:
+    using TextureWrapFunc = real(*)(real);
+    static real wrap_clamp(real x) noexcept{
+        return std::clamp<real>(x,0,1);
+    }
+    static real wrap_repeat(real x) noexcept{
+        return std::clamp<real>(x-std::floor(x),0,1);
+    }
+    TextureWrapFunc wrapper_u = &wrap_repeat;
+
+    real inv_gamma = 1;
+
+    virtual Spectrum evaluate_impl(real u) const noexcept = 0;
+public:
+    virtual ~Texture1D() = default;
+
+    virtual int width() const noexcept = 0;
+
+    virtual real evaluate_s(real u) const noexcept{
+        u = wrapper_u(u);
+        auto ret = evaluate_impl(u);
+        if(inv_gamma != 1){
+            for(int i=0;i<SPECTRUM_COMPONET_COUNT;++i)
+                ret[i] = std::pow(ret[i],inv_gamma);
+        }
+        return ret.r;
+    }
+
+    virtual Spectrum evaluate(real u) const noexcept {
+        u = wrapper_u(u);
+        auto ret = evaluate_impl(u);
+        if(inv_gamma != 1){
+            for(int i=0;i<SPECTRUM_COMPONET_COUNT;++i)
+                ret[i] = std::pow(ret[i],inv_gamma);
+        }
+        return ret;
+    }
+};
+
 class Texture2D{
 protected:
     using TextureWrapFunc = real(*)(real);

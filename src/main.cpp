@@ -142,9 +142,9 @@ void run(const RenderParams& params){
     }
     scene->prepare_to_render();
     //create renderer
-    auto renderer = create_pt_renderer(pt_params);
+//    auto renderer = create_pt_renderer(pt_params);
 //    auto renderer = create_sppm_renderer(sppm_params);
-//    auto renderer = create_bdpt_renderer(bdpt_params);
+    auto renderer = create_bdpt_renderer(bdpt_params);
 
     AutoTimer timer("render","s");
     auto render_target = renderer->render(*scene.get(), Film({params.render_target_width, params.render_target_height}, filter));
@@ -185,10 +185,10 @@ int main(int argc,char** argv){
     };
 
     RenderParams cornell_box = {
-        .render_result_name = "tracer_cornel-box_pt_vol_test",
+        .render_result_name = "tracer_cornel-box_bdpt_vol_test",
         .filter = {.radius = 0.5,.alpha = 0.6},
-        .render_target_width = 300,
-        .render_target_height = 300,
+        .render_target_width = 600,
+        .render_target_height = 600,
         .camera = {
                 .pos = {0,1,6.8},
                 .target = {0,1,5.8},

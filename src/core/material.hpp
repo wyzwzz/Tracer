@@ -20,6 +20,7 @@ public:
     virtual Spectrum evaluate(const Point2f& uv) const  = 0;
 
     virtual SurfaceShadingPoint shading(const SurfaceIntersection& isect,MemoryArena& arena) const = 0;
+
 };
 
 TRACER_END

@@ -30,6 +30,8 @@ class Medium;
 class MediumInterface;
 class BSDF;
 class BSSRDF;
+class BSSRDFSurface;
+class Texture1D;
 class Texture2D;
 class Texture3D;
 class SurfaceIntersection;
