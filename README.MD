@@ -36,15 +36,25 @@ My offscreen rendering lab based on PBRT
 - [ ] Display
 ## Screenshot
 Veach
+
 ![veach-mis](screenshot/tracer_veach-mis.png)
+
 Cornell-box
 ![cornell-box](screenshot/tracer_cornel-box.png)
+
 Cornell-box with fog
+
 ![cornell-box](screenshot/tracer_cornel-box_bdpt_vol_test.png)
+
 bedroom
+
 ![bedroom](screenshot/tracer_bedroom.png)
+
 dinningroom
+
 ![dinningroom](screenshot/tracer_diningroom.png)
+
 Cornell-box2
+
 ![cornell-box](screenshot/tracer_cornellbox.png)
 
