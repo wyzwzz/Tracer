@@ -250,8 +250,7 @@ namespace bdpt{
                 return pdf_sa * dist_cos / dist2;
             }
             case VertexType::Medium : {
-                NOT_IMPL
-                return 0;
+                return pdf_sa / distance_squared(dst_v.medium_pt.pos,pos);
             }
             default:
                 LOG_ERROR("invalid type");
