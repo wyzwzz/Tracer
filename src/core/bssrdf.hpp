@@ -21,7 +21,7 @@ class BSSRDF:public NoCopy{
 public:
     virtual ~BSSRDF() = default;
 
-    virtual BSSRDFSampleResult sample_pi(const Sample3& sample,MemoryArena& arena) const = 0;
+    virtual BSSRDFSampleResult sample_pi(const Scene& scene,const Sample3& sample,MemoryArena& arena) const = 0;
 };
 
 class BSSRDFSurface{

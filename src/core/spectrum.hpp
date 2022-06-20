@@ -148,6 +148,10 @@ TRACER_BEGIN
         return Color3<T>(std::sqrt(c.r),std::sqrt(c.g),std::sqrt(c.b));
     }
 
+    template<typename T>
+    Color3<T> exp(const Color3<T>& c){
+        return Color3<T>(std::exp(c.r),std::exp(c.g),std::exp(c.b));
+    }
 
     using Spectrum = Color3<real>;
     constexpr int SPECTRUM_COMPONET_COUNT = 3;

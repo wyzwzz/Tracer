@@ -24,6 +24,7 @@ file(
         src/light/*.cpp
         src/accelerator/*.cpp
         src/material/bxdf/*.cpp
+        src/material/bssrdf/*.cpp
         src/post_processor/*.cpp
         src/medium/*.cpp
 )

@@ -7,9 +7,11 @@
 #include "core/material.hpp"
 #include "core/sampler.hpp"
 #include "core/bsdf.hpp"
+#include "core/bssrdf.hpp"
 #include "core/primitive.hpp"
 #include "utility/logger.hpp"
 #include "direct_illumination.hpp"
+
 TRACER_BEGIN
 class PathTraceRenderer:public PixelSamplerRenderer{
     int min_depth = 5;
@@ -68,7 +70,6 @@ public:
             }
 
             if(!found_intersection){
-//                return Spectrum(1,0,0);
                 break;
             }
 
@@ -104,7 +105,6 @@ public:
             else{
                 //continent scattering too much
                 //no scattering
-                //todo ???
                 coef *= medium->tr(ray.o,isect.pos,sampler);
                 scattering_count = 0;
             }
@@ -131,13 +131,8 @@ public:
             //sample bsdf to get new path direction
             auto bsdf_sample = shading_p.bsdf->sample(isect.wo,TransportMode::Radiance,sampler.sample3());
 
-
-
-            if(bsdf_sample.f.is_back() || bsdf_sample.pdf < eps){
-
+            if(bsdf_sample.f.is_back() || bsdf_sample.pdf < eps)
                 break;
-            }
-
 
             //set specular flag for next bounce ray
             specular_sample = bsdf_sample.is_delta;//todo reduce depth due to specular sample ?
@@ -148,18 +143,45 @@ public:
 
             coef *= bsdf_sample.f * abs_cos(isect.geometry_coord.z,bsdf_sample.wi) / bsdf_sample.pdf;
 
-             ray = Ray(isect.eps_offset(bsdf_sample.wi),
+            ray = Ray(isect.eps_offset(bsdf_sample.wi),
                      normalize(bsdf_sample.wi));
 
-            //todo handle bssdf
             if(!shading_p.bssrdf)
                 continue;
 
+
             bool pos_wi = isect.geometry_coord.in_positive_z_hemisphere(bsdf_sample.wi);
             bool pos_wo = isect.geometry_coord.in_positive_z_hemisphere(isect.wo);
-            //refract happened
+            //bssrdf should only perform when ray into the inside of object
+            //consider subsurface scattering only when refract happened
             if(!pos_wi && pos_wo){
+                const auto bssrdf_sample_ret = shading_p.bssrdf->sample_pi(scene,sampler.sample3(),arena);
+                if(bssrdf_sample_ret.coef.is_back())
+                    break;
 
+                coef *= bssrdf_sample_ret.coef / bssrdf_sample_ret.pdf;
+
+                auto& new_isect = bssrdf_sample_ret.isect;
+                auto new_shading_p = new_isect.material->shading(new_isect,arena);
+
+                Spectrum new_direct_illum;
+                for(int i = 0; i < direct_light_sample_num; i++){
+                    for(auto light:scene.lights){
+                        new_direct_illum += coef * sample_light(scene,light,new_isect,new_shading_p,sampler);
+                    }
+                    new_direct_illum += coef * sample_bsdf(scene,new_isect,new_shading_p,sampler);
+                }
+                L += real(1) / direct_light_sample_num * new_direct_illum;
+
+                const auto new_bsdf_sample_ret = new_shading_p.bsdf->sample(new_isect.wo,TransportMode::Radiance,sampler.sample3());
+                if(new_bsdf_sample_ret.f.is_back())
+                    break;
+
+                coef *= new_bsdf_sample_ret.f * abs_cos(new_isect.geometry_coord.z,new_bsdf_sample_ret.wi) / new_bsdf_sample_ret.pdf;
+
+                ray = Ray(new_isect.eps_offset(new_bsdf_sample_ret.wi),new_bsdf_sample_ret.wi);
+
+                specular_sample = new_bsdf_sample_ret.is_delta;
             }
 
             //apply russian roulette
