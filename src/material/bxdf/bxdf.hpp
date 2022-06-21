@@ -28,7 +28,7 @@ public:
 
     virtual real pdf(const Vector3f& lwi,const Vector3f& lwo) const = 0;
 
-    virtual BXDFSampleResult sample(const Vector3f& wo,TransportMode mode,const Sample2& sample) const = 0;
+    virtual BXDFSampleResult sample(const Vector3f& lwo,TransportMode mode,const Sample2& sample) const = 0;
 
     virtual bool has_diffuse() const = 0;
 

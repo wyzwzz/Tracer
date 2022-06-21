@@ -6,7 +6,7 @@
 #define TRACER_REFLECTION_HPP
 
 #include "geometry.hpp"
-
+#include <optional>
 TRACER_BEGIN
 
 inline Vector3f reflect(const Vector3f& w,const Vector3f n) noexcept{
@@ -37,6 +37,17 @@ inline Vector3f reflect(const Vector3f& w,const Vector3f n) noexcept{
                           / (eta_o * cos_theta_i + eta_i * cos_theta_t);
 
         return real(0.5) * (para * para + perp * perp);
+    }
+
+
+    inline std::optional<Vector3f> refract_dir(const Vector3f& lwo,const Vector3f& n,real eta){
+        const real cos_theta_i = std::abs(lwo.z);
+        const real sin_theta_i_2 = (std::max)(real(0), 1 - cos_theta_i * cos_theta_i);
+        const real sin_theta_t_2 = eta * eta * sin_theta_i_2;
+        if(sin_theta_t_2 >= 1)
+            return std::nullopt;
+        const real cosThetaT = std::sqrt(1 - sin_theta_t_2);
+        return (eta * cos_theta_i - cosThetaT) * n - eta * lwo;
     }
 
 TRACER_END

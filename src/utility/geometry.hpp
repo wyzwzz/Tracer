@@ -917,6 +917,17 @@ namespace tracer {
         return std::acos(std::clamp<real>(w.z,-1,1));
     }
 
+    inline real local_tan_theta(const Vector3f& w){
+        const real t = 1 - w.z * w.z;
+        if(t <= 0)
+            return 0;
+        return std::sqrt(t) / w.z;
+    }
+
+    inline real local_cos_to_sin(real cos_theta){
+        return std::sqrt((std::max<real>)(0, 1 - cos_theta * cos_theta));
+    }
+
     inline real spherical_theta(const Vector3f &v) {
         return std::acos(std::clamp<real>(v.z, -1, 1));
     }

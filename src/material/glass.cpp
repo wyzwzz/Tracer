@@ -2,7 +2,7 @@
 // Created by wyz on 2022/5/28.
 //
 #include <optional>
-#include "fresnel_point.hpp"
+#include "material/utility/fresnel_point.hpp"
 #include "core/texture.hpp"
 #include "core/bsdf.hpp"
 #include "core/material.hpp"
@@ -92,15 +92,7 @@ public:
         return real(0.5) * (color_refract + color_reflect);
     }
 private:
-    static std::optional<Vector3f> refract_dir(const Vector3f& lwo,const Vector3f& n,real eta){
-        const real cos_theta_i = std::abs(lwo.z);
-        const real sin_theta_i_2 = (std::max)(real(0), 1 - cos_theta_i * cos_theta_i);
-        const real sin_theta_t_2 = eta * eta * sin_theta_i_2;
-        if(sin_theta_t_2 >= 1)
-            return std::nullopt;
-        const real cosThetaT = std::sqrt(1 - sin_theta_t_2);
-        return (eta * cos_theta_i - cosThetaT) * n - eta * lwo;
-    }
+
 
     const DielectricFresnelPoint* fresnel_point;
     Spectrum color_reflect;
