@@ -49,8 +49,12 @@ namespace microfacet{
         return 2 / (1 + std::sqrt(1 + root * root));
     }
 
-    //sample lwh according to wo and ax ay
-    Vector3f sample_anisotropic_gtr2_normal(const Vector3f& ve,real ax,real ay,const Sample2& sample){
+    /**
+     * @brief sample lwh according to wo and ax ay
+     * @see Eric Heitz, Importance Sampling Microfacet-Based BSDFs using the Distribution of Visible Normals.
+
+     */
+    Vector3f sample_anisotropic_gtr2_with_visible_normal(const Vector3f& ve,real ax,real ay,const Sample2& sample){
         const Vector3f vh = Vector3f (ax * ve.x, ay * ve.y, ve.z).normalize();
         const real lensq = vh.x * vh.x + vh.y * vh.y;
 
@@ -74,7 +78,16 @@ namespace microfacet{
         return ne;
     }
 
-    //sample lwh according to ax ay
+
+    /**
+     * @brief sample lwh according to ax ay
+    $$
+        \phi = \arctan(\frac{\alpha_{y}}{\alpha_{x}}\tan(2\pi\xi)) \\
+        \sin\phi = \alpha_{y}\sin(2\pi\xi)\frac{1}{\sqrt {\alpha^{2}_{x}+\alpha^{2}_{y}}} \\
+        \cos\phi = \alpha_{x}\cos(2\pi\xi)\frac{1}{\sqrt {\alpha^{2}_{x}+\alpha^{2}_{y}}} \\
+        \cos\theta = \sqrt {\frac{A(1-\xi)}{(1-A)\xi + A}}
+    $$
+     */
     Vector3f sample_anisotropic_gtr2(real ax,real ay,const Sample2& sample) noexcept{
         real sin_phi_h = ay * std::sin(2 * PI_r * sample.u);
         real cos_phi_h = ax * std::cos(2 * PI_r * sample.u);

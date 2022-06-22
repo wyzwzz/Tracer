@@ -61,9 +61,7 @@ TRACER_BEGIN
         return newRC<GeneralScene>();
     }
 
-    RC<Scene> create_general_scene(const RC<Aggregate>& accel
-//                                   ,const vector<RC<Light>>& lights
-    ){
+    RC<Scene> create_general_scene(const RC<Aggregate>& accel){
         return newRC<GeneralScene>(accel);
     }
 

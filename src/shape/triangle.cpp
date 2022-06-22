@@ -104,16 +104,6 @@ TRACER_BEGIN
             return 1 / surface_area();
         }
 
-        real pdf(const SurfacePoint& p) const noexcept{
-            NOT_IMPL
-            return 0;
-        }
-
-        real pdf(const SurfacePoint&ref, const Vector3f& wi) const noexcept{
-            NOT_IMPL
-            return 0;
-        }
-
         real pdf(const Point3f& ref,const Point3f& pos) const noexcept override{
                 return 1 / surface_area();
         }
@@ -216,10 +206,6 @@ TRACER_BEGIN
 
         return true;
     }
-
-//    RC<Shape> create_triangle(){
-//
-//    }
 
     std::vector<RC<Shape>> create_triangle_mesh(const mesh_t& mesh){
         std::vector<RC<Shape>> triangles;

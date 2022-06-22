@@ -10,11 +10,8 @@
 TRACER_BEGIN
 
 
-RC<Scene> create_general_scene();
 
-    RC<Scene> create_general_scene(const RC<Aggregate>& accel
-//                                   ,const vector<RC<Light>>& lights
-                                   );
+RC<Scene> create_general_scene(const RC<Aggregate>& accel);
 
 TRACER_END
 

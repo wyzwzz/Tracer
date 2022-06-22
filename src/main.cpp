@@ -1,7 +1,8 @@
-#include "core/renderer.hpp"
+ #include "core/renderer.hpp"
 #include "core/render.hpp"
 #include "core/scene.hpp"
 #include "core/light.hpp"
+#include "core/bssrdf.hpp"
 #include "factory/filter.hpp"
 #include "factory/renderer.hpp"
 #include "factory/camera.hpp"
@@ -13,6 +14,7 @@
 #include "factory/light.hpp"
 #include "factory/post_processor.hpp"
 #include "factory/medium.hpp"
+#include "factory/texture.hpp"
 #include "utility/image_file.hpp"
 #include "utility/logger.hpp"
 #include "utility/timer.hpp"
@@ -36,13 +38,13 @@ struct RenderParams{
         real focal_dist;
     }camera;
     std::string obj_file_name;
-    std::string ibl_file_name;
+    mutable std::string ibl_file_name;
 
 };
 PTRendererParams pt_params{
     .worker_count = 18,
     .task_tile_size = 16,
-    .spp = 4096,
+    .spp = 1024,
     .min_depth = 15,
     .max_depth = 20,
     .direct_light_sample_num = 1};
@@ -65,7 +67,124 @@ BDPTRendererParams bdpt_params{
     .max_light_vertex_count = 10,
     .spp =  1024
 };
+void run_scene_test(const RenderParams& params){
+    auto filter = create_gaussin_filter(params.filter.radius,params.filter.alpha);
+    auto camera = create_thin_lens_camera((real)params.render_target_width/params.render_target_height,
+                                          {params.camera.pos[0],params.camera.pos[1],params.camera.pos[2]},
+                                          {params.camera.target[0],params.camera.target[1],params.camera.target[2]},
+                                          {params.camera.up[0],params.camera.up[1],params.camera.up[2]},
+                                          params.camera.fov,
+                                          params.camera.lens_radius,params.camera.fov);
+    std::vector<RC<Primitive>> primitives;
+    std::vector<RC<Material>> materials;
 
+    auto default_zero_texture = create_constant_texture2d(Spectrum(0));
+    auto default_bssrdf = newRC<BSSRDFSurface>();
+
+    RC<Material> metal0 = create_disney(
+            create_constant_texture2d(Spectrum(0.7)),
+            create_constant_texture2d(Spectrum(0.3)),
+            create_constant_texture2d(Spectrum(0.15)),
+            create_constant_texture2d(Spectrum(0.5)),default_zero_texture, create_constant_texture2d(Spectrum(1.5)),
+            default_zero_texture,default_zero_texture,default_zero_texture,
+            default_zero_texture,default_zero_texture,default_zero_texture,
+            default_zero_texture,newBox<const NormalMapper>(nullptr),default_bssrdf
+            );
+    RC<Material> metal1 = create_disney(
+            create_constant_texture2d(Spectrum(0.7)),
+            create_constant_texture2d(Spectrum(0.6)),
+            create_constant_texture2d(Spectrum(0.25)),
+            default_zero_texture,default_zero_texture,default_zero_texture,
+            default_zero_texture,default_zero_texture,default_zero_texture,
+            default_zero_texture,default_zero_texture,default_zero_texture,
+            default_zero_texture,newBox<const NormalMapper>(nullptr),default_bssrdf
+    );
+
+    RC<Material> metal2 = create_disney(
+            create_constant_texture2d(Spectrum(0.7)),
+            create_constant_texture2d(Spectrum(1)),
+            create_constant_texture2d(Spectrum(0.15)),
+            default_zero_texture,default_zero_texture,default_zero_texture,
+            default_zero_texture,default_zero_texture,default_zero_texture,
+            default_zero_texture,default_zero_texture,default_zero_texture,
+            default_zero_texture,newBox<const NormalMapper>(nullptr),default_bssrdf
+    );
+
+    RC<Material> disney = create_disney(
+            create_constant_texture2d(Spectrum(0.3,0.7,0.7)),//base color
+            create_constant_texture2d(Spectrum(0.3)),//metallic
+            create_constant_texture2d(Spectrum(0.3)),//roughness
+            create_constant_texture2d(Spectrum(0.0)),//transmission
+            create_constant_texture2d(Spectrum(0.3)),//transmission roughness
+            create_constant_texture2d(Spectrum(1.5)),//ior,
+            create_constant_texture2d(Spectrum(1)),//specular scale
+            create_constant_texture2d(Spectrum(0)),//specular tint
+            create_constant_texture2d(Spectrum(0)),//anisotropic
+            create_constant_texture2d(Spectrum(0)),//sheen
+            create_constant_texture2d(Spectrum(0)),//sheen tint
+            create_constant_texture2d(Spectrum(0)),//clearcoat
+            create_constant_texture2d(Spectrum(0)),//clearcoat gloss
+            newBox<const NormalMapper>(nullptr),default_bssrdf
+            );
+
+    auto vacuum = create_vacuum();
+    auto fog = create_homogeneous_medium({0.03,0.03,0.03},{0.3,0.3,0.3},0.8,25);
+    MediumInterface mi;
+    mi.inside = vacuum;
+    mi.outside = vacuum;
+//    auto ball_primitive0 = create_geometric_primitive(create_sphere(1.6, translate(Vector3f(-4,0,0))),metal0,mi,Spectrum());
+//    primitives.emplace_back(ball_primitive0);
+//    auto ball_primitive1 = create_geometric_primitive(create_sphere(1.6, translate(Vector3f(0,0,0))),metal1,mi,Spectrum());
+//    primitives.emplace_back(ball_primitive1);
+//    auto ball_primitive2 = create_geometric_primitive(create_sphere(1.6, translate(Vector3f(4,0,0))),metal2,mi,Spectrum());
+//    primitives.emplace_back(ball_primitive2);
+    auto ball_primitive = create_geometric_primitive(create_sphere(1.6,Transform()),disney,mi,Spectrum(0));
+    primitives.emplace_back(ball_primitive);
+
+    auto bvh = create_bvh_accel(3);
+    {
+        AutoTimer timer("bvh build");
+        bvh->build(std::move(primitives));
+    }
+
+    auto scene = create_general_scene(bvh);
+    scene->set_camera(camera);
+
+    std::string default_ibl_filename = "gray_pier_4k.hdr";
+    if(params.ibl_file_name.empty())
+        params.ibl_file_name = default_ibl_filename;
+    if(!params.ibl_file_name.empty()){
+        auto env_map = create_texture2d_from_file(params.ibl_file_name);
+        auto ibl = create_ibl_light(env_map, rotate_x(0));
+        scene->environment_light = ibl;
+        scene->lights.push_back(ibl.get());
+    }
+
+    scene->prepare_to_render();
+
+    auto renderer = create_pt_renderer(pt_params);
+
+    AutoTimer timer("render","s");
+    auto render_target = renderer->render(*scene.get(), Film({params.render_target_width, params.render_target_height}, filter));
+    write_image_to_hdr(render_target.color, params.render_result_name+".hdr");
+    LOG_INFO("write hdr...");
+    auto gamma_corrector = create_gamma_corrector(1.0/2.2);
+    auto aces_tone_mapper = create_aces_tone_mapper(1);
+//    aces_tone_mapper->process(render_target);
+    auto& imgf = render_target.color;
+    Image2D<Color3b> imgu8(imgf.width(),imgf.height());
+    real inv_gamma = 1.0 / 2.2;
+    for(int i = 0; i < imgf.width(); i++){
+        for(int j = 0; j < imgf.height(); j++){
+            imgu8.at(i,j).x = std::clamp<int>(std::pow(imgf.at(i,j).r,inv_gamma) * 255,0,255);
+            imgu8.at(i,j).y = std::clamp<int>(std::pow(imgf.at(i,j).g,inv_gamma) * 255,0,255);
+            imgu8.at(i,j).z = std::clamp<int>(std::pow(imgf.at(i,j).b,inv_gamma) * 255,0,255);
+        }
+    }
+    write_image_to_png(imgu8,params.render_result_name+".png");
+    LOG_INFO("write png...");
+    LOG_INFO("finish task");
+}
 void run(const RenderParams& params){
     auto filter = create_gaussin_filter(params.filter.radius,params.filter.alpha);
     auto camera = create_thin_lens_camera((real)params.render_target_width/params.render_target_height,
@@ -134,6 +253,7 @@ void run(const RenderParams& params){
     auto scene = create_general_scene(bvh);
     scene->lights = area_lights;
     scene->set_camera(camera);
+
     if(!params.ibl_file_name.empty()){
         auto env_map = create_texture2d_from_file(params.ibl_file_name);
         auto ibl = create_ibl_light(env_map, rotate_x(PIOver2_r));
@@ -247,8 +367,26 @@ int main(int argc,char** argv){
             .obj_file_name = "cornellbox.obj"
     };
 
+    RenderParams test_ball = {
+            .render_result_name = "tracer_ball_test",
+            .filter = {.radius = 0.5,.alpha = 0.6},
+            .render_target_width = 320,
+            .render_target_height = 320,
+            .camera = {
+                    .pos = {0,-5,1},
+                    .target = {0,0,0},
+                    .up = {0,1,0},
+                    .fov = PI_r * 48 / 180.0,
+                    .lens_radius = 0,
+                    .focal_dist = 10.0
+            },
+            .obj_file_name = "",
+            .ibl_file_name = "gray_pier_4k.hdr"
+    };
+
     try{
-        run(cornell_box);
+//        run(cornell_box);
+        run_scene_test(test_ball);
     }
     catch(const std::exception& e){
         LOG_CRITICAL("exception: {}",e.what());

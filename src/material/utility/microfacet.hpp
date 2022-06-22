@@ -31,7 +31,7 @@ namespace microfacet{
     real smith_gtr2(real tan_theta, real alpha) noexcept;
 
     //sample lwh according to wo and ax ay
-    Vector3f sample_anisotropic_gtr2_normal(const Vector3f& lwo,real ax,real ay,const Sample2& sample);
+    Vector3f sample_anisotropic_gtr2_with_visible_normal(const Vector3f& lwo,real ax,real ay,const Sample2& sample);
 
     //sample lwh according to ax ay
     Vector3f sample_anisotropic_gtr2(real ax,real ay,const Sample2& sample) noexcept;

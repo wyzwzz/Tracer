@@ -18,7 +18,9 @@ class Material{
 public:
     virtual ~Material() = default;
 
-    virtual Spectrum evaluate(const Point2f& uv) const  = 0;
+    virtual Spectrum evaluate(const Point2f& uv) const {
+        return {};
+    }
 
     virtual SurfaceShadingPoint shading(const SurfaceIntersection& isect,MemoryArena& arena) const = 0;
 

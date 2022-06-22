@@ -57,7 +57,7 @@ Spectrum GGXMicrofacetReflectionBXDF::evaluate(const Vector3f &lwi, const Vector
 BXDFSampleResult GGXMicrofacetReflectionBXDF::sample(const Vector3f &lwo, TransportMode mode, const Sample2 &sample) const {
     if(lwo.z <= 0)
         return {};
-    const Vector3f lwh = microfacet::sample_anisotropic_gtr2_normal(lwo,ax,ay,sample).normalize();
+    const Vector3f lwh = microfacet::sample_anisotropic_gtr2_with_visible_normal(lwo,ax,ay,sample).normalize();
     if(lwh.z <= 0)
         return {};
     const Vector3f lwi = (2 * dot(lwo,lwh) * lwh - lwo).normalize();

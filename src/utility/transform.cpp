@@ -147,4 +147,16 @@ namespace tracer{
                     0, 0, 0, 1);
         return Transform(m, transpose(m));
     }
+
+    Transform translate(const Vector3f& delta){
+        Matrix4x4 m(1,0,0,delta.x,
+                    0,1,0,delta.y,
+                    0,0,1,delta.z,
+                    0,0,0,1);
+        Matrix4x4 inv_m(1,0,0,-delta.x,
+                        0,1,0,-delta.y,
+                        0,0,1,-delta.z,
+                        0,0,0,1);
+        return Transform(m,inv_m);
+    }
 }
