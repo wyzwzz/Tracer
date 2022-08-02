@@ -1,11 +1,13 @@
 # Tracer
-## 渲染器运行流程
+## Path Tracer渲染器运行流程
     1.将一张film划分为多个tile，每一个tile由一个线程负责，tile在划分时不相交的，但是具体的tile在创建时会根据filter的半径进行校正
     2.每一个tile的渲染是单线程的，即依次渲染tile里的每一个pixel，每个tile创建一个arena，当一个pixel渲染完后reset arena
     3.每一个像素的渲染，首先从Camera生成光线开始，光线的生成涉及到对像素在film上的采样和相机透镜位置上的采样，暂时不考虑时间
     4.生成光线后，接着是对场景的求交，找到交点处的几何信息和反射模型
     5.交点处的几何信息
     6.根据交点的几何信息从Material中得到Shading相关的信息
+    7.采样光源，计算Shading Color
+    8.采样brdf计算新的光线
 
 ## 主要的一些接口类
 ### filter

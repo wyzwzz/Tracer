@@ -102,7 +102,7 @@ public:
     real pdf(real u,real v) const{
         int iu = std::clamp<int>(u * pu_conditional_v[0]->count(),0,pu_conditional_v[0]->count() - 1);
         int iv = std::clamp<int>(v * pv_marginal->count(),0,pv_marginal->count()-1);
-        return pu_conditional_v[iv]->func[iu] / pv_marginal->func_int;
+        return pu_conditional_v[iv]->func[iu] * pv_marginal->func_int;//p(u,v) = p(u|v) * p(v)
     }
 private:
     std::vector<Box<Distribution1D>> pu_conditional_v;

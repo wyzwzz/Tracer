@@ -71,8 +71,12 @@ TRACER_BEGIN
                         }
                     }
 
+//                    const real delta_area = std::abs(
+//                            2 * PI_r * (x1 - x0) * (std::cos(PI_r * y1 - std::cos(PI_r * y0)))
+//                            );
+                    //d_omega = sin_theta * d_theta * d_phi
                     const real delta_area = std::abs(
-                            2 * PI_r * (x1 - x0) * (std::cos(PI_r * y1 - std::cos(PI_r * y0)))
+                            2 * PI_r * (x1 - x0) * PI_r * (y1 - y0) * sin(PI_r * 0.5* (y1 + y0))
                             );
                     img.at(x,y) = pixel_lum * delta_area;
 
@@ -87,6 +91,7 @@ TRACER_BEGIN
 
         LightSampleResult sample_li(const Point3f& ref,const Sample5& sample) const override{
             real map_pdf;
+            //sample from p(u,v) to p(wi)
             auto [u,v] = distrib->sample_continuous(sample.u,sample.v,&map_pdf);
             if(map_pdf == 0) return {};
             real theta = v * PI_r;
@@ -101,7 +106,7 @@ TRACER_BEGIN
             if(sin_theta == 0)
                 return {};
             //g(u,v) = (PI*v,2PI*u) -> (theta,phi)
-            //p(theta,phi) = p(u,v) / (2 * PI * PI(
+            //p(theta,phi) = p(u,v) / (2 * PI * PI)
             //p(wi) = p(theta,phi) / sin_theta = p(u,v) / (2 * PI * PI * sin_theta)
             real pdf = map_pdf / ( 2 * PI_r * PI_r * sin_theta);//Jacobian
             LightSampleResult ret;

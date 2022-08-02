@@ -4,6 +4,7 @@
 TRACER_BEGIN
 
 // See http://graphics.pixar.com/library/ApproxBSSRDF/paper.pdf
+// https://zhuanlan.zhihu.com/p/523611327
 class NormalizedDiffusionBSSRDF: public SeparableBSSRDF{
 public:
     NormalizedDiffusionBSSRDF(const SurfaceIntersection& isect,real eta,const Spectrum& A,const Spectrum dmfp) noexcept;

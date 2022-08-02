@@ -364,6 +364,9 @@ NormalizedDiffusionBSSRDF::NormalizedDiffusionBSSRDF(const SurfaceIntersection &
     d = l / s;
 }
 
+/**
+ * R(r) = A * ( exp(-r / d) + exp(-r / (3d) ) ) / ( 8 * PI * d * r)
+ */
 Spectrum NormalizedDiffusionBSSRDF::eval_r(real distance) const {
     return A * (exp(-Spectrum(distance) / d) + exp(-Spectrum(distance) / (real(3) * d)))
            / (8 * PI_r * d);

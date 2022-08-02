@@ -291,11 +291,14 @@ namespace bdpt{
     {
         auto camera = scene.get_camera();
         //evaluate ray weight for camera and pdf
+        //ok, first camera pos and dir is generated and not need to call sample_we
         const auto camera_we_ret = camera->eval_we(ray.o,ray.d);
         const auto camera_pdf_ret = camera->pdf_we(ray.o,ray.d);
         auto& camera_v = v_path[0];
 
+        //camera path's first vertex is on camera lens
         camera_v = create_camera_vertex(ray.o,camera_we_ret.n);
+        //accu_coef is accumulate beta until current pos(including), not consider any other about next pos
         camera_v.accu_coef = Spectrum(1 / camera_pdf_ret.pdf_pos);
         camera_v.pdf_fwd   = camera_pdf_ret.pdf_pos;
         camera_v.is_delta  = false;
@@ -983,6 +986,9 @@ namespace bdpt{
         for(int t = 1; t <= camera_v_cnt; ++t) {
             for (int s = 0; s <= light_v_cnt; ++s) {
                 const int t_s_len = t + s;
+                //pass these:
+                // t = 1 && s = 0 for only one vertex on camera
+                // t = 1 && s = 1 for endpoint of light has dir which is a delta function that can't connect
                 if(t_s_len < 2 || (t == 1 && s == 1))
                     continue;
                 //ignore invalid connection related to env light

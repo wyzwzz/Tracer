@@ -112,6 +112,19 @@ public:
 
             auto shading_p = isect.material->shading(isect,arena);
 
+            //sample bsdf to get new path direction
+            auto bsdf_sample = shading_p.bsdf->sample(isect.wo,TransportMode::Radiance,sampler.sample3());
+
+            if(bsdf_sample.f.is_back() || bsdf_sample.pdf < eps)
+                break;
+
+            //set specular flag for next bounce ray
+            specular_sample = bsdf_sample.is_delta;//todo reduce depth due to specular sample ?
+            if(specular_sample && s_depth < max_specular_depth){
+                s_depth++;
+                depth--;
+            }
+
             //sample direct illumination from lights
             if(!specular_sample){
                 Spectrum direct_illum;
@@ -125,20 +138,6 @@ public:
                     direct_illum += coef * sample_bsdf(scene,isect,shading_p,sampler);
                 }
                 L += real(1) / direct_light_sample_num * direct_illum;
-            }
-
-
-            //sample bsdf to get new path direction
-            auto bsdf_sample = shading_p.bsdf->sample(isect.wo,TransportMode::Radiance,sampler.sample3());
-
-            if(bsdf_sample.f.is_back() || bsdf_sample.pdf < eps)
-                break;
-
-            //set specular flag for next bounce ray
-            specular_sample = bsdf_sample.is_delta;//todo reduce depth due to specular sample ?
-            if(specular_sample && s_depth < max_specular_depth){
-                s_depth++;
-                depth--;
             }
 
             coef *= bsdf_sample.f * abs_cos(isect.geometry_coord.z,bsdf_sample.wi) / bsdf_sample.pdf;

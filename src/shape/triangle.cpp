@@ -198,6 +198,8 @@ TRACER_BEGIN
         //compute dndu dndv
         Vector3f sn = nA + alpha * (nB - nA) + beta * (nC - nA);
         Vector3f dndu,dndv;
+        //todo shading coord using dndu dndv is wrong, change to use ss ts
+        //ss = normalize(dpdu) and ts = cross(sn,ss)
         compute_ss_ts(nB-nA,nC-nA,Vector2f(uvB-uvA),Vector2f(uvC-uvA),sn,dndu,dndv);
         if(dndu.length_squared() < eps || dndv.length_squared() < eps){
             coordinate(sn,dndu,dndv);

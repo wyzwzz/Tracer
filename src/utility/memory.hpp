@@ -100,6 +100,7 @@ T* alloc_aligned(size_t count){
         const size_t max_block_size;
         size_t current_block_pos = 0, current_alloc_size = 0;
         uint8_t *current_block = nullptr;
+        //todo available with priority queue or sort after every erase/insert
         std::list<std::pair<size_t, uint8_t *>> used_blocks, available_blocks;
     };
 
