@@ -14,7 +14,7 @@ TRACER_BEGIN
 
 RC<Shape> create_sphere(real radius,const Transform& local_to_world);
 
-std::vector<RC<Shape>> create_triangle_mesh(const mesh_t& mesh);
+std::vector<RC<Shape>> create_triangle_mesh(const mesh_t& mesh,const Transform& local_to_world);
 
 TRACER_END
 

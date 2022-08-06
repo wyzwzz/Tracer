@@ -4,6 +4,9 @@
 #include "core/sampling.hpp"
 TRACER_BEGIN
 
+//precompute cdf-1 for d = 1
+//also has an analytic solution:  https://zero-radiance.github.io/post/sampling-diffusion/
+
 namespace
 {
 
@@ -369,7 +372,7 @@ NormalizedDiffusionBSSRDF::NormalizedDiffusionBSSRDF(const SurfaceIntersection &
  */
 Spectrum NormalizedDiffusionBSSRDF::eval_r(real distance) const {
     return A * (exp(-Spectrum(distance) / d) + exp(-Spectrum(distance) / (real(3) * d)))
-           / (8 * PI_r * d);
+           / (8 * PI_r * d);//todo: * distance ?
 }
 
 SeparableBSSRDF::SampleRResult NormalizedDiffusionBSSRDF::sample_r(int channel, Sample1 sam) const {

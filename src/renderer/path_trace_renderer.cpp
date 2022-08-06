@@ -28,8 +28,8 @@ public:
         if(0){
             SurfaceIntersection isect;
             if (scene.intersect_p(r, &isect)) {
-                auto color = isect.material->evaluate(isect.uv);
-                return color;
+//                auto color = isect.material->evaluate(isect.uv);
+//                return color;
                 auto n = isect.shading_coord.z;
                 return Spectrum(n.x + 1,n.y + 1,n.z + 1) * 0.5f;
             } else
@@ -44,8 +44,20 @@ public:
         int scattering_count = 0;
 
         for(int depth = 0, s_depth = 0; depth < max_depth; ++depth){
-            if(!coef.is_finite()){
-                LOG_CRITICAL("coef get infinite");
+            //apply russian roulette
+            Spectrum rr_coef = coef;
+//            if(depth > min_depth){
+//                auto q = std::max<real>(0.05,1 - rr_coef.max_component_value());
+//                if(sampler.sample1().u < q) break;
+//                coef /= 1 - q;
+//            }
+            if(depth > min_depth){
+                if(sampler.sample1().u > 0.9)
+                    break;
+                coef /= 0.9;
+            }
+            if(!coef.is_valid()){
+                LOG_CRITICAL("coef get invalid: {} {} {}",coef.r,coef.g,coef.b);
                 break;
             }
             SurfaceIntersection isect;
@@ -141,7 +153,12 @@ public:
             }
 
             coef *= bsdf_sample.f * abs_cos(isect.geometry_coord.z,bsdf_sample.wi) / bsdf_sample.pdf;
-
+            if(!coef.is_valid()){
+                LOG_CRITICAL("coef get infinite: {} {} {}",coef.r,coef.g,coef.b);
+                LOG_CRITICAL("bsdf sample f:{} {} {}",bsdf_sample.f.r,bsdf_sample.f.g,bsdf_sample.f.b);
+                LOG_CRITICAL("bsdf sample pdf: {}",bsdf_sample.pdf);
+                break;
+            }
             ray = Ray(isect.eps_offset(bsdf_sample.wi),
                      normalize(bsdf_sample.wi));
 
@@ -183,21 +200,9 @@ public:
                 specular_sample = new_bsdf_sample_ret.is_delta;
             }
 
-            //apply russian roulette
-            Spectrum rr_coef = coef;
-            if(depth > min_depth){
-                auto q = std::max<real>(0.05,1 - rr_coef.max_component_value());
-                if(sampler.sample1().u < q) break;
-                coef /= 1 - q;
-            }
-//            if(depth > min_depth){
-//                if(sampler.sample1().u > 0.9)
-//                    break;
-//                coef /= 0.9;
-//            }
         }
-        if(!L.is_finite()){
-            LOG_CRITICAL("L get infinite");
+        if(!L.is_valid()){
+            LOG_CRITICAL("L get infinite: {} {} {}",L.r,L.g,L.b);
             return {};
         }
         else

@@ -55,6 +55,8 @@ TRACER_BEGIN
 
                     for(Point2i pixel:tile_bound){
                         //todo re-generate sample for each spp
+                        Spectrum Ls;
+//                        if(pixel != Point2i(158,63)) continue;
                         for(int i = 0; i < spp; ++i){
                             //get camera sample to generate ray
                             const Sample2 film_sample = sampler->sample2();
@@ -74,6 +76,7 @@ TRACER_BEGIN
 
                                 L = eval_pixel_li(scene,ray,*sampler,arena);
 //                                L = {std::max(0.f,ray.d.x),std::max(0.f,ray.d.y),std::max(0.f,ray.d.z)};
+                                Ls += L;
                             }
                             //add camera ray's contribution to pixel
                             //todo replace Spectrum Class
@@ -89,6 +92,12 @@ TRACER_BEGIN
                                 LOG_INFO("finish {}",finish_count * 1.0 / total_pixels);
                             }
                         }
+
+//                        if(!Ls.is_meaningful()){
+//                            LOG_CRITICAL("{} {} get invalid L: {} {} {}",
+//                                         pixel.x,pixel.y,Ls.r,Ls.g,Ls.b);
+//                        }
+
                     }
                     film.merge_film_tile(film_tile);
                 });

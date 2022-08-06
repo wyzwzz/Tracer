@@ -72,7 +72,7 @@ TRACER_BEGIN
                     }
 
 //                    const real delta_area = std::abs(
-//                            2 * PI_r * (x1 - x0) * (std::cos(PI_r * y1 - std::cos(PI_r * y0)))
+//                            2 * PI_r * (x1 - x0) * (std::cos(PI_r * y1) - std::cos(PI_r * y0))
 //                            );
                     //d_omega = sin_theta * d_theta * d_phi
                     const real delta_area = std::abs(

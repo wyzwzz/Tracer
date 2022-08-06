@@ -144,6 +144,7 @@ namespace{
             return transmission_ * C_ * std::abs(F * D * G / (4 * lwi.z * lwo.z));
         }
         Spectrum f_diffuse(real cos_theta_i,real cos_theta_o,real cos_theta_d) const{
+            //
             const Spectrum f_lambert = C_ / PI_r;
             const real FL = microfacet::one_minus_5(cos_theta_i);
             const real FV = microfacet::one_minus_5(cos_theta_o);
@@ -440,7 +441,7 @@ namespace{
                 if(clearcoat_ > 0){
                     const real tan_theta_i = local_tan_theta(lwi);
                     const real tan_theta_o = local_tan_theta(lwo);
-                    const real cos_theta_h = local_tan_theta(lwh);
+                    const real cos_theta_h = lwh.z;
                     const real sin_theta_h = local_cos_to_sin(cos_theta_h);
 
                     clearcoat = f_clearcoat(

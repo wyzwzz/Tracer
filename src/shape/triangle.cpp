@@ -209,18 +209,18 @@ TRACER_BEGIN
         return true;
     }
 
-    std::vector<RC<Shape>> create_triangle_mesh(const mesh_t& mesh){
+    std::vector<RC<Shape>> create_triangle_mesh(const mesh_t& mesh,const Transform& local_to_world){
         std::vector<RC<Shape>> triangles;
         const auto triangles_count = mesh.indices.size() / 3;
         const auto vertices_count = mesh.vertices.size();
         assert(mesh.indices.size() % 3 == 0);
-        Transform t;
-        auto triangle_mesh = newRC<TriangleMesh>(t,triangles_count,vertices_count);
+
+        auto triangle_mesh = newRC<TriangleMesh>(local_to_world,triangles_count,vertices_count);
         triangle_mesh->indices = mesh.indices;
         for(size_t i = 0; i < vertices_count; ++i){
             const auto& vertex = mesh.vertices[i];
-            triangle_mesh->p[i] = t(vertex.pos);
-            triangle_mesh->n[i] = t(vertex.n);
+            triangle_mesh->p[i] = local_to_world(vertex.pos);
+            triangle_mesh->n[i] = local_to_world(vertex.n).normalize();
             triangle_mesh->uv[i] = vertex.uv;
         }
         for(size_t i = 0; i < triangles_count; ++i){

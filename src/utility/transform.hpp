@@ -93,7 +93,7 @@ namespace tracer{
                               m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z,
                               m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z);
         }
-
+        friend Transform operator*(const Transform& lhs,const Transform& rhs);
     private:
         Matrix4x4 m,inv_m;
     };

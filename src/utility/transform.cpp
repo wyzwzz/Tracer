@@ -124,6 +124,18 @@ namespace tracer{
     }
 
 
+    Transform scale(real x,real y,real z){
+        Matrix4x4 m(x,0,0,0,
+                    0,y,0,0,
+                    0,0,z,0,
+                    0,0,0,1);
+        Matrix4x4 inv_m(1.0/x,0,0,0,
+                        0,1.0/y,0,0,
+                        0,0,1.0/z,0,
+                        0,0,0,1);
+        return Transform(m,inv_m);
+    }
+
     Transform rotate_x(real theta) {
         real sinTheta = std::sin(theta);
         real cosTheta = std::cos(theta);
@@ -158,5 +170,9 @@ namespace tracer{
                         0,0,1,-delta.z,
                         0,0,0,1);
         return Transform(m,inv_m);
+    }
+
+    Transform operator*(const Transform& lhs,const Transform& rhs){
+        return Transform(Matrix4x4::mul(lhs.m,rhs.m),Matrix4x4::mul(rhs.inv_m,lhs.inv_m));
     }
 }

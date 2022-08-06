@@ -7,6 +7,9 @@ TRACER_BEGIN
 // https://zhuanlan.zhihu.com/p/523611327
 class NormalizedDiffusionBSSRDF: public SeparableBSSRDF{
 public:
+    /**
+     * @param dmfp diffuse mean free path on surface
+     */
     NormalizedDiffusionBSSRDF(const SurfaceIntersection& isect,real eta,const Spectrum& A,const Spectrum dmfp) noexcept;
 
 protected:

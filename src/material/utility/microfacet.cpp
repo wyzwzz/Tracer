@@ -27,6 +27,7 @@ namespace microfacet{
 
     //D term
     real gtr1(real sin_theta_h,real cos_theta_h,real alpha) noexcept{
+        if(alpha >= 1) return invPI_r;
         const real U = sqr(alpha) - 1;
         const real LD = 2 * PI_r  * std::log(alpha);
         const real RD = sqr(alpha * cos_theta_h) + sqr(sin_theta_h);

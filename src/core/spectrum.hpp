@@ -109,6 +109,11 @@ TRACER_BEGIN
     }
 
     template<typename T>
+    Color3<T> operator+(const Color3<T>& lhs,T rhs){
+        return Color3<T>(lhs.r + rhs, lhs.g + rhs, lhs.b + rhs);
+    }
+
+    template<typename T>
     Color3<T> operator+(const Color3<T>& lhs,const Color3<T>& rhs){
         return Color3<T>(lhs.r+rhs.r,lhs.g+rhs.g,lhs.b+rhs.b);
     }

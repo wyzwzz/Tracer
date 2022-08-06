@@ -166,7 +166,7 @@ BSSRDFSampleResult SeparableBSSRDF::sample_pi(const Scene& scene,const Sample3 &
         return {};
 
     auto [isect_index,sample_w] = extract_uniform_int(sample.w,0,isect_count);
-    for(int i = 0; i < isect_count; ++i){
+    for(int i = 0; i < isect_index; ++i){
         assert(isect_list);
         isect_list = isect_list->next;
     }
