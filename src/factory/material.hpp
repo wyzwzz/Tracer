@@ -33,7 +33,7 @@ RC<BSSRDFSurface> create_normalized_diffusion_bssrdf_surface(
         RC<const Texture2D> dmfp,
         RC<const Texture2D> eta);
 
-//2015 bsdf version
+//2015 bsdf version(old)
 RC<Material> create_disney(
         RC<const Texture2D> base_color,
         RC<const Texture2D> metallic,
@@ -66,6 +66,26 @@ RC<Material> create_disney_brdf(
         RC<const Texture2D> clearcoat_gloss
         );
 
+//2015 bsdf version
+RC<Material> create_disney_bsdf(
+        RC<const Texture2D> base_color,
+        RC<const Texture2D> metallic,
+        RC<const Texture2D> ior,
+        RC<const Texture2D> roughness,
+        RC<const Texture2D> specular,
+        RC<const Texture2D> specular_tint,
+        RC<const Texture2D> anisotropic,
+        RC<const Texture2D> sheen,
+        RC<const Texture2D> sheen_tint,
+        RC<const Texture2D> clearcoat,
+        RC<const Texture2D> clearcoat_gloss,
+        RC<const Texture2D> spec_trans,
+        RC<const Texture2D> scatter_dist,
+        bool thin,
+        RC<const Texture2D> flatness,
+        RC<const Texture2D> diffuse_trans,
+        Box<const NormalMapper> normal_mapper
+        );
 
 RC<Material> create_metal(
         RC<const Texture2D> color,

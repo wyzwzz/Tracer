@@ -132,7 +132,7 @@ namespace {
             if(!f_disney.is_valid()){
                 LOG_CRITICAL("invalid f");
             }
-            return f_disney;
+            return f_disney * normal_correct_factor(geometry_coord,shading_coord,wi);
         }
 
         BSDFSampleResult sample(const Vector3f& wo,TransportMode mode,const Sample3& sample) const override{

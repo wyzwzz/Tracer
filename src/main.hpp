@@ -85,12 +85,12 @@ BDPTRendererParams bdpt_params{
 };
 
 DisneyBRDFParams disney_brdf_params = {
-        .base_color = {0.72,0.72,0.72},
-        .subsurface = 0,
-        .metallic = 1,
-        .specular = 0.0,
-        .specular_tint = 0,
-        .roughness = 1,
+        .base_color = {0.82,0.82,0.82},
+        .subsurface = 1.0,
+        .metallic = 0.0,
+        .specular = 1.0,
+        .specular_tint = 1,
+        .roughness = 0.0,
         .anisotropic = 0,
         .sheen = 0.0,
         .sheen_tint = 0.5,
@@ -108,11 +108,16 @@ void run_disney_brdf(const RenderParams& params,const DisneyBRDFParams& disney){
                                           params.camera.lens_radius,params.camera.fov);
     auto model = load_model_from_file(params.obj_file_name);
     auto vacuum = create_vacuum();
+
     MediumInterface mi;
     mi.outside = vacuum;
     mi.inside = vacuum;
+
+//    assert(model.material.size() == 1);
+//    auto albedo = create_texture_from_file(model.material.front()).map_kd;
     auto disney_material = create_disney_brdf(
             create_constant_texture2d(disney.base_color),
+//            albedo,
             create_constant_texture2d(Spectrum(disney.subsurface)),
             create_constant_texture2d(Spectrum(disney.metallic)),
             create_constant_texture2d(Spectrum(disney.specular)),
@@ -124,8 +129,11 @@ void run_disney_brdf(const RenderParams& params,const DisneyBRDFParams& disney){
             create_constant_texture2d(Spectrum(disney.clear_coat)),
             create_constant_texture2d(Spectrum(disney.clearcoat_gloss))
             );
+
+    auto ball_primitive = create_geometric_primitive(create_sphere(1.6,Transform()),disney_material,mi,Spectrum(0));
     std::vector<RC<Primitive>> primitives;
-    Transform model_transform  = translate({0,0,-2}) * scale(2,2,2) * rotate_x(PI_r);//= translate({-1,0,1.5}) * rotate_x(-PI_r / 2);//
+//    primitives.emplace_back(ball_primitive);
+    Transform model_transform  = translate({0,0,-2}) * rotate_x(PI_r / 2);//= translate({0,0,-2}) * scale(2,2,2) * rotate_x(PI_r);//
     for(const auto& mesh:model.mesh){
         const auto triangle_count = mesh.indices.size() / 3;
         auto triangles = create_triangle_mesh(mesh,model_transform);

@@ -30,7 +30,7 @@ public:
             if (scene.intersect_p(r, &isect)) {
 //                auto color = isect.material->evaluate(isect.uv);
 //                return color;
-                auto n = isect.shading_coord.z;
+                auto n = isect.geometry_coord.z;
                 return Spectrum(n.x + 1,n.y + 1,n.z + 1) * 0.5f;
             } else
                 return Spectrum(0.0, 0.0, 0.0);

@@ -27,8 +27,8 @@ TRACER_BEGIN
         const int film_width = film.width();
         const int film_height = film.height();
         const auto scene_camera = scene.get_camera();
-        const int total_pixels = film_width * film_height * spp;
-        std::atomic<int> finish_count = 0;
+        const size_t total_pixels = (size_t)film_width * film_height * spp;
+        std::atomic<size_t> finish_count = 0;
 
         auto sampler_prototype = newRC<SimpleUniformSampler>(42, false);
         PerThreadNativeSamplers perthread_sampler(
@@ -56,7 +56,7 @@ TRACER_BEGIN
                     for(Point2i pixel:tile_bound){
                         //todo re-generate sample for each spp
                         Spectrum Ls;
-//                        if(pixel != Point2i(158,63)) continue;
+//                        if(pixel != Point2i(1000,1700)) continue;
                         for(int i = 0; i < spp; ++i){
                             //get camera sample to generate ray
                             const Sample2 film_sample = sampler->sample2();

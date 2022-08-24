@@ -374,7 +374,7 @@ Spectrum NormalizedDiffusionBSSRDF::eval_r(real distance) const {
     return A * (exp(-Spectrum(distance) / d) + exp(-Spectrum(distance) / (real(3) * d)))
            / (8 * PI_r * d);//todo: * distance ?
 }
-
+//https://zero-radiance.github.io/post/sampling-diffusion/
 SeparableBSSRDF::SampleRResult NormalizedDiffusionBSSRDF::sample_r(int channel, Sample1 sam) const {
     auto r = sample_inv_cdf_table(
             sam.u, INV_CDF_TAB, sizeof(INV_CDF_TAB) / sizeof(INV_CDF_TAB[0]));

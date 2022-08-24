@@ -440,11 +440,28 @@ int main(int argc,char** argv){
             .obj_file_name = "fullbody.obj",
             .ibl_file_name = "gray_pier_4k.hdr"
     };
+    RenderParams marry = {
+            .render_result_name = "tracer_marry_test",
+            .filter = {.radius = 0.5, .alpha = 0.6},
+            .render_target_width = 1024,
+            .render_target_height = 1024,
+            .camera = {
+                    .pos = {0,-5,1},
+                    .target = {0,0,0},
+                    .up = {0,1,0},
+                    .fov = PI_r * 48 / 180.0,
+                    .lens_radius = 0,
+                    .focal_dist = 10.0
+            },
+            .obj_file_name = "Marry.obj",
+            .ibl_file_name = "gray_pier_4k.hdr"
+    };
+
     try{
 //        run(cornell_box);
 //        run_scene_test(test_ball);
 //        run_test_bssrdf(stanford_dragon);
-        run_disney_brdf(stanford_dragon,disney_brdf_params);
+        run_disney_brdf(fullbody,disney_brdf_params);
     }
     catch(const std::exception& e){
         LOG_CRITICAL("exception: {}",e.what());

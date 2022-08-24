@@ -193,6 +193,8 @@ TRACER_BEGIN
         Vector3f gn = cross(AB,AC).normalize();
         Vector3f dpdu,dpdv;
         compute_ss_ts(AB,AC,Vector2f(uvB - uvA),Vector2f(uvC-uvA),gn,dpdu,dpdv);
+        dpdu = cross(dpdv,gn);
+        dpdv = cross(gn,dpdu);
         isect->geometry_coord = Coord(dpdu,dpdv,gn);
 
         //compute dndu dndv
@@ -204,8 +206,10 @@ TRACER_BEGIN
         if(dndu.length_squared() < eps || dndv.length_squared() < eps){
             coordinate(sn,dndu,dndv);
         }
+        dndu = cross(dndv,sn);
+        dndv = cross(sn,dndu);
         isect->shading_coord = Coord(dndu,dndv,sn);
-
+//        isect->geometry_coord = isect->shading_coord;
         return true;
     }
 

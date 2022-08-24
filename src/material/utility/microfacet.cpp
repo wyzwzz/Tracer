@@ -53,7 +53,7 @@ namespace microfacet{
     /**
      * @brief sample lwh according to wo and ax ay
      * @see Eric Heitz, Importance Sampling Microfacet-Based BSDFs using the Distribution of Visible Normals.
-
+     * Sampling the GGX Distribution of Visible Normals.
      */
     Vector3f sample_anisotropic_gtr2_with_visible_normal(const Vector3f& ve,real ax,real ay,const Sample2& sample){
         const Vector3f vh = Vector3f (ax * ve.x, ay * ve.y, ve.z).normalize();

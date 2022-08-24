@@ -102,7 +102,7 @@ SeparableBSSRDF::SeparableBSSRDF(const SurfaceIntersection &po, real eta)
 {
 
 }
-
+//https://www.arnoldrenderer.com/research/s2013_bssrdf_slides.pdf
 BSSRDFSampleResult SeparableBSSRDF::sample_pi(const Scene& scene,const Sample3 &sample, MemoryArena &arena) const {
     auto [channel,sample_u] = extract_uniform_int(sample.u,0,SPECTRUM_COMPONET_COUNT);
 
